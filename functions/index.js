@@ -1,5 +1,5 @@
 const functions = require('firebase-functions');
-const moment = require('moment-timezone');
+// const moment = require('moment-timezone');
 const dayjs = require('dayjs')
 var utc = require('dayjs/plugin/utc') // dependent on utc plugin
 var timezone = require('dayjs/plugin/timezone')
@@ -9,24 +9,27 @@ dayjs.extend(utc)
 dayjs.extend(timezone)
 
 var overrides = {
-  gmt: 0,
-  edt: "America/New_York",
-  est: "America/New_York",
-  cdt: "America/Chicago",
-  cst: "America/Chicago",
-  mdt: "America/Denver",
-  mst: "America/Denver",
-  pdt: "America/Los_Angeles",
-  pst: "America/Los_Angeles",
-  lon: "Europe/London",
-  nyc: "America/New_York",
-  bos: "America/New_York",
-  cam: "America/New_York",
-  sf: "America/Los_Angeles",
-  sea: "America/Los_Angeles",
-  mtv: "America/Los_Angeles",
-  mpo: "America/Los_Angeles",
-  tok: "Asia/Tokyo"
+  GMT: 0,
+  EDT: "America/New_York",
+  EST: "America/New_York",
+  ET: "America/New_York",
+  CDT: "America/Chicago",
+  CST: "America/Chicago",
+  MDT: "America/Denver",
+  MST: "America/Denver",
+  PDT: "America/Los_Angeles",
+  PST: "America/Los_Angeles",
+  PT: "America/Los_Angeles",
+  LON: "Europe/London",
+  NYC: "America/New_York",
+  BOS: "America/New_York",
+  CAM: "America/New_York",
+  SF: "America/Los_Angeles",
+  SEA: "America/Los_Angeles",
+  MTV: "America/Los_Angeles",
+  MPO: "America/Los_Angeles",
+  TOK: "Asia/Tokyo",
+  "CGK":"Asia/Jakarta", "DFW":"America/Chicago", "ATL":"America/New_York", "DEN":"America/Denver", "DEL":"Asia/Kolkata", "ORD":"America/Chicago", "CAN":"Asia/Shanghai", "CLT":"America/New_York", "HND":"Asia/Tokyo", "KMG":"Asia/Shanghai", "CKG":"Asia/Shanghai", "PEK":"Asia/Shanghai", "XIY":"Asia/Shanghai", "SZX":"Asia/Shanghai", "CTU":"Asia/Shanghai", "PVG":"Asia/Shanghai", "SEA":"America/Los_Angeles", "MEX":"America/Mexico_City", "SHA":"Asia/Shanghai", "YYZ":"America/Toronto", "BOM":"Asia/Kolkata", "HGH":"Asia/Shanghai", "LAX":"America/Los_Angeles", "LHR":"Europe/London", "AMS":"Europe/Amsterdam", "PHX":"America/Phoenix", "BLR":"Asia/Kolkata", "NKG":"Asia/Shanghai", "PKX":"Asia/Shanghai", "IAH":"America/Chicago", "LAS":"America/Los_Angeles", "IST":"Europe/Istanbul", "MSP":"America/Chicago", "SVO":"Europe/Moscow", "CGO":"Asia/Shanghai", "CSX":"Asia/Shanghai", "DTW":"America/Detroit", "DMK":"Asia/Bangkok", "CDG":"Europe/Paris", "SLC":"America/Denver", "MNL":"Asia/Manila", "KWE":"Asia/Shanghai", "TAO":"Asia/Shanghai", "SUB":"Asia/Jakarta", "MAD":"Europe/Madrid", "HYD":"Asia/Kolkata", "FRA":"Europe/Berlin", "SFO":"America/Los_Angeles", "XMN":"Asia/Shanghai", "DXB":"Asia/Dubai", "KUL":"Asia/Kuala_Lumpur", "WUH":"Asia/Shanghai", "URC":"Asia/Shanghai", "YVR":"America/Vancouver", "EWR":"America/New_York", "DME":"Europe/Moscow", "TSN":"Asia/Shanghai", "HAK":"Asia/Shanghai", "MCO":"America/New_York", "CCU":"Asia/Kolkata", "BKK":"Asia/Bangkok", "HRB":"Asia/Shanghai", "MAA":"Asia/Kolkata", "CJU":"Asia/Seoul", "SAW":"Europe/Istanbul", "ICN":"Asia/Seoul", "UPG":"Asia/Makassar", "SGN":"Asia/Ho_Chi_Minh", "PHL":"America/New_York", "JNB":"Africa/Johannesburg", "FUK":"Asia/Tokyo", "BOS":"America/New_York", "CPH":"Europe/Copenhagen", "BWI":"America/New_York", "JFK":"America/New_York", "SHE":"Asia/Shanghai", "DLC":"Asia/Shanghai", "TNA":"Asia/Shanghai", "VIE":"Europe/Vienna", "GRU":"America/Sao_Paulo", "OSL":"Europe/Oslo", "ITM":"Asia/Tokyo", "CTS":"Asia/Tokyo", "YYC":"America/Edmonton", "MIA":"America/New_York", "SYX":"Asia/Shanghai", "DUB":"Europe/Dublin", "HNL":"Pacific/Honolulu", "LED":"Europe/Moscow", "BOG":"America/Bogota", "HET":"Asia/Shanghai", "VKO":"Europe/Moscow", "GMP":"Asia/Seoul", "DOH":"Asia/Qatar", "IAD":"America/New_York", "FLL":"America/New_York", "BNA":"America/Chicago", "YUL":"America/Toronto", "NNG":"Asia/Shanghai", "LHW":"Asia/Shanghai"
 }
 
 var hourMoji = ["🕛","🕐","🕑","🕒","🕓","🕔","🕕","🕖","🕗","🕘","🕙","🕚"];
@@ -35,22 +38,24 @@ var halfHourMoji = ["🕧","🕜","🕝","🕞","🕟","🕠","🕡","🕢","�
 
 exports.index = functions.https.onRequest((req, res) => {
   var path = req.params[0];
-  path = path.substring(1);
+
 
   var error;
-  var zones = path.split(/[_,]/);
+  var zones = path.split(/[_,.]/);
+  console.log(path,zones)
   if (zones.length > 1) {
     try {
       var timeString = decodeURIComponent(zones.shift());
-      var timeRE = /(?<h1>\d+)?:?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d+)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/
+      // Handle difference in params[0] on local vs server (firebase) looking at leading slash
+      var timeRE = /\/?(?<h1>\d+)?:?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d+)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/
       var match = timeString.match(timeRE);
       var groups = match.groups;
+      console.log("timeString: ",timeString,"match: ",match)
 
       var start = dayjs().hour(groups.h1).minute(groups.m1 || 0)
       if (groups.p1 == "p") start = start.add(12, 'hour')
-      console.log(groups, start)
-
-      var end = undefined;
+    
+      var end = undefined;       //TODO: Fix the code to assume an end time
       if (groups.h2) {
         end = start
         end.hour(groups.h2)
@@ -58,47 +63,52 @@ exports.index = functions.https.onRequest((req, res) => {
         if (groups.p2 == "p") end.add(12, 'hour')
       }
 
-
       var zone1 = zones[0];
-      zone1 = overrides[zone1.toLowerCase()] || zone1;
+      zone1 = overrides[zone1.toUpperCase()] || zone1;
 
       start = start.tz(zone1,true);
       end = end ? end.tz(zone1,true) : undefined;
+
       console.log("start", start)
       console.log("end  ", end)
 
-      
-      //console.log("Converting from:", zone1)
-      var day = start;
-      //day = day.subtract(2, 'hours'); // ugh shoot me
-
-      day 
       var zoneHTML = []
-      var zoneStrings = [];
+      var zoneStrings = []
       zones.forEach(zone => {
-        var realzone = overrides[zone.toLowerCase()] || zone;
-        //console.log("Converting to:", realzone)
+        var tzName = overrides[zone.toUpperCase()] || zone;
         if (zone.length) {
-          var tz = day.tz(realzone);
-          var emoji = hourMoji[tz.hour() % 12];
-          var start = tz.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")}
-          var description = `${emoji} ${start} ${zone.toUpperCase()}`
+          var zoneStart = start.tz(tzName)
+          var extraDay = start.day() < zoneStart.day()
+          var startString = zoneStart.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")
+         
+          var endString = "";
+          if (end) {
+            var zoneEnd = end.tz(tzName)
+            endString = zoneEnd.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")
+          }
+          console.log("tzName: ", zoneStart, zoneEnd, startString, endString)
+
+          var emoji = hourMoji[zoneStart.hour() % 12];
+          var description = `${emoji} ${startString}${endString ? "–" + endString : ""} ${zone.toUpperCase()} ${extraDay ? " +1":""}`
           zoneStrings.push(description);
-          var night = (tz.hour() > 18 || tz.hour <= 6) ? "night" : ""
+          
+          var night = (zoneStart.hour() > 18 || zoneStart.hour <= 6) ? "night" : ""
           zoneHTML.push(`
           <div class="zone ${night}">
             <div class="emoji">${emoji}</div>
-            <div class="time">${start}</div>
+            
+            <div class="time">${startString}  ${extraDay ? "&#8314;&#185;":""}</div>
             <div class="zone">${zone.toUpperCase()}</div>
           </div>`);
           //zoneInfos.push({e: emoji, t:tz, z: zone, d: description);
+          }
         }
       )
 
       var debugInfo = `
       ${zone1}
-      ${day}
-      ${day.format("h:mm a Z")}
+      ${start}
+      ${start.format("h:mm a Z")}
       `
       var description = zoneStrings.join("   ");
 
