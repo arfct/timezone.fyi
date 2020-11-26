@@ -92,11 +92,11 @@ exports.index = functions.https.onRequest((req, res) => {
           var description = `${emoji} ${startString}${endString ? "–" + endString : ""} ${zone.toUpperCase()} ${extraDay ? " +1":""}`
           zoneStrings.push(description);
           
-          var night = (zoneStart.hour() > 18 || zoneStart.hour <= 6) ? "night" : ""
+          var night = (zoneStart.hour() > 18 || zoneStart.hour() <= 6) ? "night" : ""
+          console.log("night set: ", night,zoneStart.hour())
           zoneHTML.push(`
           <div class="zone ${night}">
             <div class="emoji">${emoji}</div>
-            
             <div class="time">${startString}  ${extraDay ? "&#8314;&#185;":""}</div>
             <div class="zone">${zone.toUpperCase()}</div>
           </div>`);
