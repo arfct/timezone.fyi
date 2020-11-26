@@ -1,0 +1,91 @@
+* {
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif, "Apple Color Emoji", "Segoe UI Emoji", "Segoe UI Symbol";
+}
+
+h1, h2 {
+  font-weight:300;
+}
+
+h2 {
+  font-weight:400;
+  line-height:150%;
+}
+
+body {
+  display:flex;
+
+  justify-content: center;
+  align-items: center;
+  height:100%;
+}
+
+.content {
+  margin-top:10vh;
+  width: 500px;
+  max-width:100%;
+  line-height:150%;
+  font-size:125%;
+  font-weight:300
+}
+
+.error {
+  margin-top:1em;
+  color:rgb(172, 84, 84);
+  font-size:small;
+}
+
+a, a:visited {
+  color:black;
+  text-decoration:none;
+}
+a:hover {
+  text-decoration:underline;
+}
+
+.clock {
+  font-size:200%;
+  width:1em;
+  height:1em;
+}
+.clock::before {
+  content: "🕐";
+}
+
+@keyframes timeflies {
+  0% { content: "🕐"; }
+  4% { content: "🕑"; }
+  8% { content: "🕒"; }
+  12% { content: "🕓"; }
+  16% { content: "🕔"; }
+  20% { content: "🕕"; }
+  23% { content: "🕧"; }
+  26% { content: "🕜"; }
+  30% { content: "🕝"; }
+  34% { content: "🕞"; }
+  38% { content: "🕟"; }
+  42% { content: "🕠"; }
+  46% { content: "🕡"; }
+  50% { content: "🕢"; }
+  54% { content: "🕣"; }
+  58% { content: "🕤"; }
+  62% { content: "🕥"; }
+  66% { content: "🕦"; }
+  70% { content: "🕧"; }
+  73% { content: "🕕"; }
+  76% { content: "🕖"; }
+  80% { content: "🕗"; }
+  84% { content: "🕘"; }
+  88% { content: "🕙"; }
+  92% { content: "🕚"; }
+  96% { content: "🕛"; }
+}
+
+
+.clock::before {
+  animation: timeflies 2s linear infinite;
+}
+
+
+.night {
+  background:#2d2d2d;
+}
