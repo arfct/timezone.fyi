@@ -13,12 +13,32 @@ h2 {
 
 body {
   display:flex;
+  flex-direction: column;
   justify-content: center;
   align-items: center;
   height:100%;
   margin:0;
 }
 
+#header {
+  font-size: 5vh;
+  padding:.5em;
+  position:absolute;
+  top:0;
+  left:0;
+  right:0;
+  width:100vw;
+  text-align:center;
+  background:rgba(255,255,255,0.5);
+  color:rgba(0,0,0,0.8);
+  mix-blend-mode: hard-light;
+  opacity:1.0;
+
+  backdrop-filter: blur(100px);
+}
+#header:empty {
+  display: none;
+}
 .content {
   margin-top:10vh;
   width: 500px;
@@ -112,7 +132,8 @@ a:hover {
 
 .emoji {
 font-size:200%;
-mix-blend-mode: soft-light;
+mix-blend-mode: hard-light;
+opacity:0.8;
 }
 .time {
   mix-blend-mode: hard-light;
@@ -120,7 +141,7 @@ mix-blend-mode: soft-light;
 }
 .timezone {
   mix-blend-mode: hard-light;
-  opacity:0.667;
+  opacity:0.5;
   font-size:67%;
   letter-spacing: 0.05em;;
   margin:0 0 1em 0 ;

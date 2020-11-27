@@ -49,14 +49,16 @@ exports.index = functions.https.onRequest((req, res) => {
     try {
       var timeString = decodeURIComponent(zones.shift());
       // Handle difference in params[0] on local vs server (firebase) looking at leading slash
-      var timeRE = /\/?(?<h1>\d+)?:?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d+)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/
+      var timeRE = /\/?(?<label>[^\/]+\/)?(?<h1>\d+):?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d+)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/
       var match = timeString.match(timeRE);
       var groups = match.groups;
       console.log("timeString: ",timeString, "match: ", match)
 
+      var label = groups.label
+      if (label) label = label.replace(/_/g," ").slice(0, -1)
       var start = dayjs().hour(groups.h1).minute(groups.m1 || 0)
       if (groups.p1 == "p" && start.hour() < 12) start = start.add(12, 'hour')
-    
+
       var end = undefined;       //TODO: Fix the code to assume an end time
       if (groups.h2) {
         end = dayjs().hour(groups.h2).minute(groups.m2 || 0)
@@ -73,30 +75,31 @@ exports.index = functions.https.onRequest((req, res) => {
 
       var zoneHTML = []
       var zoneStrings = []
+      if (label) zoneStrings.push(label)
       zones.forEach(zone => {
         var tzName = overrides[zone.toUpperCase()] || zone;
         if (zone.length) {
           var zoneStart = start.tz(tzName)
           var extraDay = start.day() < zoneStart.day()
           var startString = zoneStart.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")
-         
+
           var endString = "";
           if (end) {
             var zoneEnd = end.tz(tzName)
             endString = zoneEnd.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")
           }
-      
+
           var emoji = hourMoji[zoneStart.hour() % 12];
-          var niceZoneName = zone.split("/").pop().replace("_", " ").toUpperCase()
-          var description = `${emoji} ${startString}${endString ? "–" + endString : ""} ${niceZoneName} ${extraDay ? " +1":""}`
+          var niceZoneName = zone.split("/").pop().replace(/_/g," ").toUpperCase()
+          var description = `${emoji} ${startString}${endString ? "‑" + endString : ""} ${niceZoneName} ${extraDay ? " +1":""}`
           zoneStrings.push(description);
-          
+
           var night = (zoneStart.hour() > 14 || zoneStart.hour() <= 6) ? "night" : ""
           zoneHTML.push(`
           <div class="zone ${night} g${zoneStart.hour()}">
             <div class="emoji">${emoji}</div>
             <div class="timezone">${niceZoneName}</div>
-            <div class="time">${startString}  ${extraDay ? "&#8314;&#185;":""}${endString ? "<br>&#x25BD;	<br>" : ""}${endString}</div>
+            <div class="time">${startString}${extraDay ? "&#8314;&#185;":""}${endString ? "<br>&#x25BD;<br>" : ""}${endString}</div>
           </div>`);
           //zoneInfos.push({e: emoji, t:tz, z: zone, d: description);
           }
@@ -108,7 +111,7 @@ exports.index = functions.https.onRequest((req, res) => {
       ${start}
       ${start.format("h:mm a Z")}
       `
-      var description = zoneStrings.join("   ");
+      var description = zoneStrings.join("        ");
 
       res.status(200).send(`<!doctype html>
         <!--${debugInfo}-->
@@ -118,17 +121,18 @@ exports.index = functions.https.onRequest((req, res) => {
           <meta charset="UTF-8">
           <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
           <meta property="og:title" content="${description}">
-          <meta property="og:description" content="timezone.fyi">
-          <meta property="og:type" content="website"> 
+          <meta property="og:description" content="${label ||"timezone.fyi"}">
+          <meta property="og:type" content="website">
         </head>
         <body style="font-family:sans-serif">
-        
+
         <!--<div class="content">
         <div class="clock"></div>-->
+        <div id="header">${label || ""}</div>
         <div id="zones">${zoneHTML.join("")}</div>
 
 
-          
+
         </body>
       </html>`);
       return;
@@ -151,11 +155,11 @@ exports.index = functions.https.onRequest((req, res) => {
     <br><b><a href="/10:30am,pst,est">http://timezone.fyi/10:30am,pst,est</a></b>
     <p>The first listed time zone will be treated as the primary. <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">List of time zone names</a>
 
-    <br>When you send these via Slack, SMS, and other modern chat clients, 
+    <br>When you send these via Slack, SMS, and other modern chat clients,
     <br>they'll expand to show times in every listed zone.
     <div class="error">${error ? error.message : ""}</div>
     </div>
     </body>
     </html>`);
-  
+
 });
