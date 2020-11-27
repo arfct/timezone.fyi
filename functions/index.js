@@ -75,23 +75,22 @@ exports.index = functions.https.onRequest((req, res) => {
 
       var zoneHTML = []
       var zoneStrings = []
-      if (label) zoneStrings.push(label)
       zones.forEach(zone => {
         var tzName = overrides[zone.toUpperCase()] || zone;
         if (zone.length) {
           var zoneStart = start.tz(tzName)
           var extraDay = start.day() < zoneStart.day()
-          var startString = zoneStart.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")
+          var startString = zoneStart.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ").replace(":00","")
 
           var endString = "";
           if (end) {
             var zoneEnd = end.tz(tzName)
-            endString = zoneEnd.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")
+            endString = zoneEnd.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ").replace(":00","")
           }
 
           var emoji = hourMoji[zoneStart.hour() % 12];
           var niceZoneName = zone.split("/").pop().replace(/_/g," ").toUpperCase()
-          var description = `${emoji} ${startString}${endString ? "‑" + endString : ""} ${niceZoneName} ${extraDay ? " +1":""}`
+          var description = `${startString}${endString ? "‑" + endString : ""} ${niceZoneName} ${extraDay ? " +1":""}`
           zoneStrings.push(description);
 
           var night = (zoneStart.hour() > 14 || zoneStart.hour() <= 6) ? "night" : ""
@@ -105,13 +104,14 @@ exports.index = functions.https.onRequest((req, res) => {
           }
         }
       )
+      if (label) zoneStrings.push(label)
 
       var debugInfo = `
       ${zone1}
       ${start}
       ${start.format("h:mm a Z")}
       `
-      var description = zoneStrings.join("        ");
+      var description = zoneStrings.join("  •  ");
 
       res.status(200).send(`<!doctype html>
         <!--${debugInfo}-->
