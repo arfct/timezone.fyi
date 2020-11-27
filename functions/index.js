@@ -34,14 +34,16 @@ var overrides = {
 
 var hourMoji = ["🕛","🕐","🕑","🕒","🕓","🕔","🕕","🕖","🕗","🕘","🕙","🕚"];
 var halfHourMoji = ["🕧","🕜","🕝","🕞","🕟","🕠","🕡","🕢","🕣","🕤","🕥","🕦","🕧"];
+var colors = [
 
+]
 
 exports.index = functions.https.onRequest((req, res) => {
   var path = req.params[0];
 
 
   var error;
-  var zones = path.split(/[_,.]/);
+  var zones = path.split(/[,.]/);
   console.log(path,zones)
   if (zones.length > 1) {
     try {
@@ -50,17 +52,15 @@ exports.index = functions.https.onRequest((req, res) => {
       var timeRE = /\/?(?<h1>\d+)?:?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d+)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/
       var match = timeString.match(timeRE);
       var groups = match.groups;
-      console.log("timeString: ",timeString,"match: ",match)
+      console.log("timeString: ",timeString, "match: ", match)
 
       var start = dayjs().hour(groups.h1).minute(groups.m1 || 0)
-      if (groups.p1 == "p") start = start.add(12, 'hour')
+      if (groups.p1 == "p" && start.hour() < 12) start = start.add(12, 'hour')
     
       var end = undefined;       //TODO: Fix the code to assume an end time
       if (groups.h2) {
-        end = start
-        end.hour(groups.h2)
-        end.minute(groups.m2 || 0)
-        if (groups.p2 == "p") end.add(12, 'hour')
+        end = dayjs().hour(groups.h2).minute(groups.m2 || 0)
+        if (groups.p2 == "p" && end.hour() < 12) end = end.add(12, 'hour')
       }
 
       var zone1 = zones[0];
@@ -69,8 +69,7 @@ exports.index = functions.https.onRequest((req, res) => {
       start = start.tz(zone1,true);
       end = end ? end.tz(zone1,true) : undefined;
 
-      console.log("start", start)
-      console.log("end  ", end)
+      console.log("Times", start, end)
 
       var zoneHTML = []
       var zoneStrings = []
@@ -86,19 +85,18 @@ exports.index = functions.https.onRequest((req, res) => {
             var zoneEnd = end.tz(tzName)
             endString = zoneEnd.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ")
           }
-          console.log("tzName: ", zoneStart, zoneEnd, startString, endString)
-
+      
           var emoji = hourMoji[zoneStart.hour() % 12];
-          var description = `${emoji} ${startString}${endString ? "–" + endString : ""} ${zone.toUpperCase()} ${extraDay ? " +1":""}`
+          var niceZoneName = zone.split("/").pop().replace("_", " ").toUpperCase()
+          var description = `${emoji} ${startString}${endString ? "–" + endString : ""} ${niceZoneName} ${extraDay ? " +1":""}`
           zoneStrings.push(description);
           
-          var night = (zoneStart.hour() > 18 || zoneStart.hour() <= 6) ? "night" : ""
-          console.log("night set: ", night,zoneStart.hour())
+          var night = (zoneStart.hour() > 14 || zoneStart.hour() <= 6) ? "night" : ""
           zoneHTML.push(`
-          <div class="zone ${night}">
+          <div class="zone ${night} g${zoneStart.hour()}">
             <div class="emoji">${emoji}</div>
-            <div class="time">${startString}  ${extraDay ? "&#8314;&#185;":""}</div>
-            <div class="zone">${zone.toUpperCase()}</div>
+            <div class="timezone">${niceZoneName}</div>
+            <div class="time">${startString}  ${extraDay ? "&#8314;&#185;":""}${endString ? "<br>&#x25BD;	<br>" : ""}${endString}</div>
           </div>`);
           //zoneInfos.push({e: emoji, t:tz, z: zone, d: description);
           }
@@ -125,15 +123,11 @@ exports.index = functions.https.onRequest((req, res) => {
         </head>
         <body style="font-family:sans-serif">
         
-        <div class="content">
-
-        <div class="clock"></div>
-        <h1><a href="/">timezone.fyi</a></h1>
-        The following times are equivalent:
-        <h2>${zoneHTML.join("")}</h2>
+        <!--<div class="content">
+        <div class="clock"></div>-->
+        <div id="zones">${zoneHTML.join("")}</div>
 
 
-        </div>
           
         </body>
       </html>`);
