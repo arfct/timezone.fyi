@@ -33,6 +33,27 @@ var overrides = {
   "CGK":"Asia/Jakarta", "DFW":"America/Chicago", "ATL":"America/New_York", "DEN":"America/Denver", "DEL":"Asia/Kolkata", "ORD":"America/Chicago", "CAN":"Asia/Shanghai", "CLT":"America/New_York", "HND":"Asia/Tokyo", "KMG":"Asia/Shanghai", "CKG":"Asia/Shanghai", "PEK":"Asia/Shanghai", "XIY":"Asia/Shanghai", "SZX":"Asia/Shanghai", "CTU":"Asia/Shanghai", "PVG":"Asia/Shanghai", "SEA":"America/Los_Angeles", "MEX":"America/Mexico_City", "SHA":"Asia/Shanghai", "YYZ":"America/Toronto", "BOM":"Asia/Kolkata", "HGH":"Asia/Shanghai", "LAX":"America/Los_Angeles", "LHR":"Europe/London", "AMS":"Europe/Amsterdam", "PHX":"America/Phoenix", "BLR":"Asia/Kolkata", "NKG":"Asia/Shanghai", "PKX":"Asia/Shanghai", "IAH":"America/Chicago", "LAS":"America/Los_Angeles", "IST":"Europe/Istanbul", "MSP":"America/Chicago", "SVO":"Europe/Moscow", "CGO":"Asia/Shanghai", "CSX":"Asia/Shanghai", "DTW":"America/Detroit", "DMK":"Asia/Bangkok", "CDG":"Europe/Paris", "SLC":"America/Denver", "MNL":"Asia/Manila", "KWE":"Asia/Shanghai", "TAO":"Asia/Shanghai", "SUB":"Asia/Jakarta", "MAD":"Europe/Madrid", "HYD":"Asia/Kolkata", "FRA":"Europe/Berlin", "SFO":"America/Los_Angeles", "XMN":"Asia/Shanghai", "DXB":"Asia/Dubai", "KUL":"Asia/Kuala_Lumpur", "WUH":"Asia/Shanghai", "URC":"Asia/Shanghai", "YVR":"America/Vancouver", "EWR":"America/New_York", "DME":"Europe/Moscow", "TSN":"Asia/Shanghai", "HAK":"Asia/Shanghai", "MCO":"America/New_York", "CCU":"Asia/Kolkata", "BKK":"Asia/Bangkok", "HRB":"Asia/Shanghai", "MAA":"Asia/Kolkata", "CJU":"Asia/Seoul", "SAW":"Europe/Istanbul", "ICN":"Asia/Seoul", "UPG":"Asia/Makassar", "SGN":"Asia/Ho_Chi_Minh", "PHL":"America/New_York", "JNB":"Africa/Johannesburg", "FUK":"Asia/Tokyo", "BOS":"America/New_York", "CPH":"Europe/Copenhagen", "BWI":"America/New_York", "JFK":"America/New_York", "SHE":"Asia/Shanghai", "DLC":"Asia/Shanghai", "TNA":"Asia/Shanghai", "VIE":"Europe/Vienna", "GRU":"America/Sao_Paulo", "OSL":"Europe/Oslo", "ITM":"Asia/Tokyo", "CTS":"Asia/Tokyo", "YYC":"America/Edmonton", "MIA":"America/New_York", "SYX":"Asia/Shanghai", "DUB":"Europe/Dublin", "HNL":"Pacific/Honolulu", "LED":"Europe/Moscow", "BOG":"America/Bogota", "HET":"Asia/Shanghai", "VKO":"Europe/Moscow", "GMP":"Asia/Seoul", "DOH":"Asia/Qatar", "IAD":"America/New_York", "FLL":"America/New_York", "BNA":"America/Chicago", "YUL":"America/Toronto", "NNG":"Asia/Shanghai", "LHW":"Asia/Shanghai"
 }
 
+// not an exhaustive list of all cities understood by Intl.DateTimeFormat,
+// but simply an inverted dictionary of the cities listed in overrides
+var citynames = Object.entries(overrides).reduce((ret, [k, v]) => 
+  {
+    if (v) {
+      ret[v.replace(/^.*\//, '')
+         .replaceAll(/_/g, '')
+         .toUpperCase()] = v;
+    }
+    return ret; 
+  }, {});
+
+// in: string
+// out: canonical city name, or original argument
+function resolveZone(z) {
+  return overrides[z.toUpperCase()] || 
+    citynames[z.toUpperCase().replaceAll(/[^A-Z]/g, '')] || 
+    z;
+}
+
+
 var hourMoji = ["🕛","🕐","🕑","🕒","🕓","🕔","🕕","🕖","🕗","🕘","🕙","🕚"];
 var halfHourMoji = ["🕧","🕜","🕝","🕞","🕟","🕠","🕡","🕢","🕣","🕤","🕥","🕦","🕧"];
 var colors = [
@@ -66,8 +87,7 @@ exports.index = functions.https.onRequest((req, res) => {
         if (groups.p2 == "p" && end.hour() < 12) end = end.add(12, 'hour')
       }
 
-      var zone1 = zones[0];
-      zone1 = overrides[zone1.toUpperCase()] || zone1;
+      var zone1 = resolveZone(zones[0]);
 
       start = start.tz(zone1,true);
       end = end ? end.tz(zone1,true) : undefined;
@@ -77,7 +97,7 @@ exports.index = functions.https.onRequest((req, res) => {
       var zoneHTML = []
       var zoneStrings = []
       zones.forEach(zone => {
-        var tzName = overrides[zone.toUpperCase()] || zone;
+        var tzName = resolveZone(zone);
         if (zone.length) {
           var zoneStart = start.tz(tzName)
           var extraDay = start.day() < zoneStart.day()
