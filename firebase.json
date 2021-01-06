@@ -8,8 +8,8 @@
     ],
     "rewrites": [
       {
-        "source": "/map",
-        "function": "map"
+        "source": "/og",
+        "function": "og"
       },
       {
         "source": "**",

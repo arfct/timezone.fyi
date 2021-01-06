@@ -4,6 +4,8 @@ const dayjs = require('dayjs')
 var utc = require('dayjs/plugin/utc') // dependent on utc plugin
 var timezone = require('dayjs/plugin/timezone')
 var customParseFormat = require('dayjs/plugin/customParseFormat')
+const { Canvas } = require('canvas');
+
 dayjs.extend(customParseFormat)
 dayjs.extend(utc)
 dayjs.extend(timezone)
@@ -65,7 +67,6 @@ function shiftZone(d, z, keepLocalTime) {
   if (!d) {
     return undefined;
   } else if (typeof z == "number") {
-    console.log(d, d.utc())
     return d.utc().utcOffset(z, keepLocalTime);
   } else {
     return d.tz(z, keepLocalTime);
@@ -75,17 +76,13 @@ function shiftZone(d, z, keepLocalTime) {
 
 var hourMoji = ["🕛","🕐","🕑","🕒","🕓","🕔","🕕","🕖","🕗","🕘","🕙","🕚"];
 var halfHourMoji = ["🕧","🕜","🕝","🕞","🕟","🕠","🕡","🕢","🕣","🕤","🕥","🕦","🕧"];
-var colors = [
+var colors = []
 
-]
-
-exports.index = functions.https.onRequest((req, res) => {
-  var path = req.params[0];
-
-
+function getZoneInfo(path) {
   var error;
+  var info = undefined;
   var zones = path.split(/[,.]/);
-  console.log(path,zones)
+
   if (zones.length > 1) {
     try {
       var timeString = decodeURIComponent(zones.shift());
@@ -93,7 +90,6 @@ exports.index = functions.https.onRequest((req, res) => {
       var timeRE = /\/?(?<label>[^\/]+\/)?(?<h1>\d?\d):?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d?\d)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/
       var match = timeString.match(timeRE);
       var groups = match.groups;
-      console.log("timeString: ",timeString, "match: ", match)
 
       var label = groups.label
       if (label) label = label.replace(/_/g," ").slice(0, -1)
@@ -107,17 +103,16 @@ exports.index = functions.https.onRequest((req, res) => {
       }
 
       var zone1 = resolveZone(zones[0]);
-
       start = shiftZone(start, zone1 ,true);
       end = shiftZone(end, zone1, true);
 
-      console.log("Times", start, end)
-
-      var zoneHTML = []
-      var zoneStrings = []
+      info = {zones: [], label}
       zones.forEach(zone => {
+        console.log("Z", zone)
+
         var tzName = resolveZone(zone);
         if (zone.length) {
+          var z = zoneInfo = {};
           var zoneStart = shiftZone(start, tzName)
           var extraDay = start.day() < zoneStart.day()
           var startString = zoneStart.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ").replace(":00","")
@@ -131,54 +126,64 @@ exports.index = functions.https.onRequest((req, res) => {
           var emoji = hourMoji[zoneStart.hour() % 12];
           var niceZoneName = zone.split("/").pop().replace(/_/g," ").toUpperCase()
           var description = `${startString}${endString ? "‑" + endString : ""} ${niceZoneName} ${extraDay ? " +1":""}`
-          zoneStrings.push(description);
-
           var night = (zoneStart.hour() > 14 || zoneStart.hour() <= 6) ? "night" : ""
-          zoneHTML.push(`
-          <div class="zone ${night} g${zoneStart.hour()}">
-            <div class="emoji">${emoji}</div>
-            <div class="timezone">${niceZoneName}</div>
-            <div class="time">${startString}${extraDay ? "&#8314;&#185;":""}${endString ? "<br>&#x25BD;<br>" : ""}${endString}</div>
-          </div>`);
-          //zoneInfos.push({e: emoji, t:tz, z: zone, d: description);
+          var zoneInfo = {description, night, zoneStart, zoneEnd, emoji, niceZoneName, startString, endString, extraDay};
+          info.zones.push(zoneInfo)
+
           }
         }
       )
-      if (label) zoneStrings.push(label)
-
-      var debugInfo = `
-      ${zone1}
-      ${start}
-      ${start.format("h:mm a Z")}
-      `
-      var description = zoneStrings.join("  •  ");
-
-      res.status(200).send(`<!doctype html>
-        <!--${debugInfo}-->
-        <head>
-          <link rel="stylesheet" type="text/css" href="/index.css">
-          <title>${description}</title>
-          <meta charset="UTF-8">
-          <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-          <meta property="og:title" content="${description}">
-          <meta property="og:description" content="${label ||"timezone.fyi"}">
-          <meta property="og:type" content="website">
-        </head>
-        <body style="font-family:sans-serif">
-
-        <!--<div class="content">
-        <div class="clock"></div>-->
-        <div id="header">${label || ""}</div>
-        <div id="zones">${zoneHTML.join("")}</div>
-
-
-
-        </body>
-      </html>`);
-      return;
     } catch (e) {
-      error = e;
+      return {error: e.message}
     }
+
+    return info; 
+  }
+  return undefined;
+}
+
+exports.index = functions.https.onRequest((req, res) => {
+  var path = req.params[0];
+
+  var error;
+  var zoneHTML = []
+  var zoneStrings = []
+
+  var info = getZoneInfo(path);
+
+  if (info && !info.error) {
+    info.zones.forEach((z) => {
+      zoneStrings.push(z.description);
+      zoneHTML.push(`
+      <div class="zone ${z.night} g${z.zoneStart.hour()}">
+        <div class="emoji">${z.emoji}</div>
+        <div class="timezone">${z.niceZoneName}</div>
+        <div class="time">${z.startString}${z.extraDay ? "&#8314;&#185;":""}${z.endString ? "<br>&#x25BD;<br>" : ""}${z.endString}</div>
+      </div>`);
+    });
+  
+    if (info.label) zoneStrings.push(info.label)
+
+    var description = zoneStrings.join("  •  ");
+
+    res.status(200).send(`<!doctype html>
+      <!--${JSON.stringify(info)}-->
+      <head>
+        <link rel="stylesheet" type="text/css" href="/index.css">
+        <title>${description}</title>
+        <meta charset="UTF-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
+        <meta property="og:title" content="${description}">
+        <meta property="og:description" content="${info.label ||"timezone.fyi"}">
+        ${ info.zones ? `<meta property="og:image" content="/og?path=${req.path}">` : ""}
+        <meta property="og:type" content="website">
+      </head>
+      <body style="font-family:sans-serif">
+      <div id="header">${info.label || ""}</div>
+      <div id="zones">${zoneHTML.join("")}</div>
+      </body>
+    </html>`);
+    return;
   }
 
   res.status(200).send(`<!doctype html>
@@ -197,9 +202,87 @@ exports.index = functions.https.onRequest((req, res) => {
 
     <br>When you send these via Slack, SMS, and other modern chat clients,
     <br>they'll expand to show times in every listed zone.
-    <div class="error">${error ? error.message : ""}</div>
+    <div class="error">${info && info.error ? info.error : ""}</div>
     </div>
     </body>
     </html>`);
+
+});
+
+exports.image = functions.https.onRequest((req, res) => {
+  https.get(req.query.url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/601.2.4 (KHTML, like Gecko) Version/9.0.1 Safari/601.2.4 facebookexternalhit/1.1 Facebot Twitterbot/1.0' } }, function(res2) {
+    console.log("data-url", req.query.url)
+    res2.setEncoding('utf8')  
+    var data = ""
+    res2.on("data", function(chunk) { data += chunk; });
+    res2.on("end", function() { 
+      console.log("data", data)
+      var $ = cheerio.load(data);
+      var result = $('meta[property="og:image"]').attr('content')
+                || $('meta[property="og:image:secure_url"]').attr('content');
+      res.redirect(302, result);
+      res.end();
+     });    
+  }).on('error', function(e) {
+    console.log("Got error: " + e.message);
+    res.status(403).send(e.message)
+    res.end();
+  });
+});
+
+var colors = ["#012459", "#001322", "#003972", "#001322", "#003972", "#001322", "#004372", "#00182b", "#004372", "#011d34", "#016792", "#00182b", "#07729f", "#042c47", "#12a1c0", "#07506e", "#74d4cc", "#1386a6", "#efeebc", "#61d0cf", "#fee154", "#a3dec6", "#fdc352", "#e8ed92", "#ffac6f", "#ffe467", "#fda65a", "#ffe467", "#fd9e58", "#ffe467", "#f18448", "#ffd364", "#f06b7e", "#f9a856", "#ca5a92", "#f4896b", "#5b2c83", "#d1628b", "#371a79", "#713684", "#28166b", "#45217c", "#192861", "#372074", "#040b3c", "#233072", "#040b3c", "#012459" ];
+
+exports.og = functions.https.onRequest((req, res) => {
+  console.log("PATH", req.query.path)
+    const info = getZoneInfo(req.query.path);
+    const canvas = new Canvas(1200, 630);
+    const ctx = canvas.getContext('2d');
+
+    if (info) {
+      ctx.beginPath();
+      ctx.rect(0, 0, canvas.width, canvas.height);
+      ctx.fillStyle = "rgba(255,255,255,1.0)";
+      ctx.fill();
+
+      var count = info.zones.length;
+      var width = canvas.width / count;
+      var height = canvas.height;
+      var size = width / 5;
+      ctx.textAlign = "center";
+      info.zones.forEach( (z, i) => {
+        ctx.beginPath();
+        ctx.rect(width * i, 0, width, canvas.height);
+        var hour = z.zoneStart.hour();
+        var grd = ctx.createLinearGradient(0, 0, 0, height);
+        grd.addColorStop(0, colors[hour * 2]);
+        grd.addColorStop(1, colors[hour * 2 + 1]);
+        ctx.fillStyle = grd
+        console.log(colors[hour * 2], colors[hour * 1 + 1]);
+        ctx.fill();
+      })
+
+      info.zones.forEach( (z, i) => {
+        ctx.fillStyle = z.night ? "white" : "black";
+        ctx.globalCompositeOperation = "hard-light"
+        
+        ctx.font = `${size/1.5}px Arial`;
+        ctx.globalAlpha = 0.5;
+        ctx.fillText(z.niceZoneName, width * (0.5 + i), height/2 - size/2);
+
+        ctx.font = `${size}px Arial`;
+        ctx.globalAlpha = 0.8;
+        ctx.fillText(z.startString, width * (0.5 + i), height/2 + size/2);
+
+
+      })
+
+
+
+    } else {
+    }
+
+    res.set('Cache-Control', 'public, max-age=60, s-maxage=31536000');
+    res.writeHead(200, {'Content-Type': 'image/png'});
+    canvas.createPNGStream().pipe(res);
 
 });
