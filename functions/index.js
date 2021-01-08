@@ -175,7 +175,7 @@ exports.index = functions.https.onRequest((req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
         <meta property="og:title" content="${description}">
         <meta property="og:description" content="${info.label ||"timezone.fyi"}">
-        ${ info.zones ? `<meta property="og:image" content="/og.jpg?path=${req.path}">` : ""}
+        ${ info.zones ? `<meta property="og:image" content="https://timezone.fyi/og.jpg?path=${req.path}">` : ""}
         <meta property="og:type" content="website">
       </head>
       <body style="font-family:sans-serif">
@@ -261,7 +261,7 @@ exports.og = functions.https.onRequest((req, res) => {
     }
 
     res.set('Cache-Control', 'public, max-age=60, s-maxage=31536000');
-    res.writeHead(200, {'Content-Type': 'image/jpeg'});
+    res.writeHead(200, {'Content-Type': 'image/jpeg', 'Content-Disposition': 'attachment; filename="ogimage.jpg"'});
     canvas.createJPEGStream().pipe(res);
 
 });
