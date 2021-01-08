@@ -175,7 +175,7 @@ exports.index = functions.https.onRequest((req, res) => {
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
         <meta property="og:title" content="${description}">
         <meta property="og:description" content="${info.label ||"timezone.fyi"}">
-        ${ info.zones ? `<meta property="og:image" content="/og?path=${req.path}">` : ""}
+        ${ info.zones ? `<meta property="og:image" content="/og.jpg?path=${req.path}">` : ""}
         <meta property="og:type" content="website">
       </head>
       <body style="font-family:sans-serif">
@@ -207,27 +207,6 @@ exports.index = functions.https.onRequest((req, res) => {
     </body>
     </html>`);
 
-});
-
-exports.image = functions.https.onRequest((req, res) => {
-  https.get(req.query.url, { headers: { 'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_11_1) AppleWebKit/601.2.4 (KHTML, like Gecko) Version/9.0.1 Safari/601.2.4 facebookexternalhit/1.1 Facebot Twitterbot/1.0' } }, function(res2) {
-    console.log("data-url", req.query.url)
-    res2.setEncoding('utf8')  
-    var data = ""
-    res2.on("data", function(chunk) { data += chunk; });
-    res2.on("end", function() { 
-      console.log("data", data)
-      var $ = cheerio.load(data);
-      var result = $('meta[property="og:image"]').attr('content')
-                || $('meta[property="og:image:secure_url"]').attr('content');
-      res.redirect(302, result);
-      res.end();
-     });    
-  }).on('error', function(e) {
-    console.log("Got error: " + e.message);
-    res.status(403).send(e.message)
-    res.end();
-  });
 });
 
 var colors = ["#012459", "#001322", "#003972", "#001322", "#003972", "#001322", "#004372", "#00182b", "#004372", "#011d34", "#016792", "#00182b", "#07729f", "#042c47", "#12a1c0", "#07506e", "#74d4cc", "#1386a6", "#efeebc", "#61d0cf", "#fee154", "#a3dec6", "#fdc352", "#e8ed92", "#ffac6f", "#ffe467", "#fda65a", "#ffe467", "#fd9e58", "#ffe467", "#f18448", "#ffd364", "#f06b7e", "#f9a856", "#ca5a92", "#f4896b", "#5b2c83", "#d1628b", "#371a79", "#713684", "#28166b", "#45217c", "#192861", "#372074", "#040b3c", "#233072", "#040b3c", "#012459" ];
@@ -282,7 +261,7 @@ exports.og = functions.https.onRequest((req, res) => {
     }
 
     res.set('Cache-Control', 'public, max-age=60, s-maxage=31536000');
-    res.writeHead(200, {'Content-Type': 'image/png'});
-    canvas.createPNGStream().pipe(res);
+    res.writeHead(200, {'Content-Type': 'image/jpeg'});
+    canvas.createJPEGStream().pipe(res);
 
 });

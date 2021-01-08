@@ -8,7 +8,7 @@
     ],
     "rewrites": [
       {
-        "source": "/og",
+        "source": "/og.jpg",
         "function": "og"
       },
       {
