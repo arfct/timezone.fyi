@@ -49,9 +49,20 @@ var overrides = {
 // in: string
 // out: canonical city name, or original argument
 function resolveZone(z) {
-  return overrides[z.toUpperCase()] || 
-    // citynames[z.toUpperCase().replace(/[^A-Z]/g, '')] || 
-    z;
+  z = overrides[z.toUpperCase()] ?? z;
+
+  console.log("Z", z)
+  let tzd = tc.TzDatabase.instance()
+
+  if (isNaN(z)) {
+    if (!tzd.exists(z)) { // Uppercase for country names
+      z = z[0].toUpperCase() + z.substring(1)
+    }
+  } else {
+    z *= 60;
+  }
+
+  return z;
 }
 
 
@@ -93,12 +104,12 @@ function getZoneInfo(path) {
 
       info = {zones: [], label}
       zones.forEach(zone => {
-        console.log("Z", zone)
 
         var tzName = resolveZone(zone);
         if (zone.length) {
           var z = zoneInfo = {};
           var tcz = tc.zone(tzName);
+
           var zoneStart = start.toZone(tcz);
           var extraDay = start.day() < zoneStart.day()
           var startString = zoneStart.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ").replace(":00","")
