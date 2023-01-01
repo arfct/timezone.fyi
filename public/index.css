@@ -144,8 +144,8 @@ opacity:0.8;
   mix-blend-mode: hard-light;
   opacity:0.5;
   font-size:67%;
-  letter-spacing: 0.05em;;
-  margin:0 0 1em 0 ;
+  letter-spacing: 0.05em;
+  margin: 0 0 .5em 0;
 }
 .zone div {
   display: inline-block;
