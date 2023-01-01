@@ -12,10 +12,11 @@
     "node": "16"
   },
   "dependencies": {
-    "canvas": "^2.9.3",
-    "dayjs": "^1.11.4",
+    "canvas": "^2.11.0",
+    "dayjs": "^1.11.7",
     "firebase-admin": "^8.10.0",
-    "firebase-functions": "^3.22.0"
+    "firebase-functions": "^3.22.0",
+    "timezonecomplete": "^5.12.4"
   },
   "devDependencies": {
     "firebase-functions-test": "^0.2.0"
