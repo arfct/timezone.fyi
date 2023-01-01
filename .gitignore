@@ -104,3 +104,4 @@ dist
 .tern-port
 .DS_Store
 .firebase/**
+functions/package-lock.json
