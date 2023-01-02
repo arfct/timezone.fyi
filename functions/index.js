@@ -103,7 +103,7 @@ function getZoneInfo(path) {
         if (groups.p1 == "p" && end.hour() < 12) end = end.add(tc.hours(12))
       }
 
-      let duration = end ? start.diff(end).minutes() : undefined;
+      let duration = end ? end.diff(start).minutes() : undefined;
       info = {zones: [], label, start, end, duration}
       zones.forEach(zone => {
 
