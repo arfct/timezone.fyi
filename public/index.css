@@ -11,6 +11,46 @@ h2 {
   line-height:150%;
 }
 
+:root {
+  font-family: -apple-system, BlinkMacSystemFont, avenir next, avenir, segoe ui, helvetica neue, helvetica, Cantarell, Ubuntu, roboto, noto, arial, sans-serif;
+}
+
+#download {
+  position: absolute;
+  top:0.5em;
+  right:0.5em;
+  font-size:5vmin;
+  min-width:2em;
+  height:2em;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  z-index:10;
+  border-radius: 100px;
+
+}
+
+#download svg {
+  width:1em;
+}
+
+#download:hover {
+  background-color:rgba(0,0,0,0.5);
+  color:white;
+}
+
+#downnload:hover::after {
+  content:"Add to Calendar";
+  display:inline;
+}
+#download, #header {
+
+  background:rgba(255,255,255,0.5);
+
+  backdrop-filter: blur(100px);
+  -webkit-backdrop-filter: blur(100px);
+}
+
 body {
   display:flex;
   flex-direction: column;
@@ -21,21 +61,23 @@ body {
 }
 
 #header {
-  font-size: 5vh;
-  padding:.5em;
+  font-size: 10vmin;
   position:absolute;
-  top:0;
-  left:0;
-  right:0;
-  width:100vw;
+  min-height:38.2vh;
+  top: 0;
+  display:flex;
+  justify-content: center;
+  align-items: center;
+  width: 100%;
   text-align:center;
-  background:rgba(255,255,255,0.5);
-  color:rgba(0,0,0,0.8);
-  mix-blend-mode: hard-light;
+  color:black;
+  /* mix-blend-mode: hard-light; */
   opacity:1.0;
-
-  backdrop-filter: blur(100px);
 }
+#header span {
+padding:0, 1em;
+}
+
 #header:empty {
   display: none;
 }
@@ -129,6 +171,14 @@ a:hover {
   display:flex;
   align-items: center;
   justify-content: center;
+}
+
+body:not(.labelled) #header {
+  display:none;
+}
+body.labelled .zone {
+  padding-top:38.2vh;
+  font-size:5vmin;
 }
 
 .emoji {
