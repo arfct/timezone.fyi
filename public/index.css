@@ -171,6 +171,7 @@ a:hover {
   display:flex;
   align-items: center;
   justify-content: center;
+  cursor:default;
 }
 
 body:not(.labelled) #header {
@@ -178,7 +179,7 @@ body:not(.labelled) #header {
 }
 body.labelled .zone {
   padding-top:38.2vh;
-  font-size:5vmin;
+  font-size:7vmin;
 }
 
 .emoji {
@@ -197,8 +198,23 @@ opacity:0.8;
   letter-spacing: 0.05em;
   margin: 0 0 .5em 0;
 }
+
+.timezone:not(:hover) .actualzone,
+  .timezone:hover .nicezone {
+    display:none;
+}
+
+.actualzone {
+  font-size:75%;
+}
+
 .zone div {
   display: inline-block;
+}
+
+.zone .dash {
+  display:block;
+  margin:-0.5em 0 -0.4em 0;
 }
 
 .time {

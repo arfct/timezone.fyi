@@ -21,6 +21,7 @@ var overrides = {
   BOS: "America/New_York",
   CAM: "America/New_York",
   SF: "America/Los_Angeles",
+  SFO: "America/Los_Angeles",
   SEA: "America/Los_Angeles",
   MTV: "America/Los_Angeles",
   MPO: "America/Los_Angeles",
@@ -51,6 +52,11 @@ var overrides = {
 function resolveZone(z) {
   z = overrides[z.toUpperCase()] ?? z;
 
+  let gmtmatch = z.toUpperCase().match(/^GMT([+\-]\d+)$/);
+  console.log("gmtmatch", gmtmatch, z)
+  if (gmtmatch && gmtmatch[1]) z = gmtmatch[1];
+
+  if (z.startsWith("GMT+"))
   if (isNaN(z)) {
     let tzd = tc.TzDatabase.instance()
     if (!tzd.exists(z)) { // Uppercase for country names
@@ -75,7 +81,7 @@ var colors = []
 function getZoneInfo(path) {
   var error;
   var info = undefined;
-  var zones = path.split(/[,.]/);
+  var zones = path.replace(/ /g, "+").split(/[,.]/);
 
   if (zones.length > 1) {
     try {
@@ -100,7 +106,7 @@ function getZoneInfo(path) {
         end = new tc.now(tc.zone(firstZone)).startOfDay()
           .add(tc.hours(parseInt(groups.h2)))
           .add(tc.minutes(parseInt(groups.m2) || 0))
-        if (groups.p1 == "p" && end.hour() < 12) end = end.add(tc.hours(12))
+        if ((groups.p2 == "p" && end.hour() < 12) || start.hour() >  end.hour()) end = end.add(tc.hours(12))
       }
 
       let duration = end ? end.diff(start).minutes() : undefined;
@@ -114,16 +120,22 @@ function getZoneInfo(path) {
 
           var zoneStart = start.toZone(tcz);
           var extraDay = start.day() < zoneStart.day()
-          var startString = zoneStart.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ").replace(":00","")
 
+          let omitXM = false;
           var endString = "";
           if (end) {
             var zoneEnd = end.toZone(tcz);
-            endString = zoneEnd.format("h:mm a").replace(" pm", "ᴘᴍ").replace(" am", "ᴀᴍ").replace(":00","")
+            endString = zoneEnd.format("h:mm a").replace(" PM", "ᴘᴍ").replace(" AM", "ᴀᴍ").replace(":00","")
+
+            // omitXM = (zoneEnd.hour() < 12 && zoneStart.hour() < 12) || zoneEnd.hour() >= 12 && zoneStart.hour() >= 12
           }
 
+          var startString = zoneStart.format(omitXM ? "h:mm" : "h:mm a").replace(" PM", "ᴘᴍ").replace(" AM", "ᴀᴍ").replace(":00","")
+
+
+
           var emoji = hourMoji[zoneStart.hour() % 12];
-          var niceZoneName = tcz.name().split("/").pop().replace(/_/g," ").toUpperCase()
+          var niceZoneName = zone.split("/").pop().replace(/_/g," ").toUpperCase()
 
           var description = `${startString}${endString ? "‑" + endString : ""} ${niceZoneName} ${extraDay ? " +1":""}`
           var night = (zoneStart.hour() > 14 || zoneStart.hour() <= 6) ? "night" : ""
@@ -157,8 +169,12 @@ exports.index = functions.https.onRequest((req, res) => {
       zoneHTML.push(`
       <div class="zone ${z.night} g${z.zoneStart.hour()}">
         <div class="emoji">${z.emoji}</div>
-        <div class="timezone">${z.niceZoneName}</div>
-        <div class="time">${z.startString}${z.extraDay ? "&#8314;&#185;":""}${z.endString ? "<br>|<br>" : ""}${z.endString}</div>
+        <div class="timezone">
+          <div class="nicezone">${z.niceZoneName}</div>
+          <div class="actualzone">${z.zoneStart.zone().name()}</div>
+        </div>
+        <div class="time">${z.startString}${z.extraDay ? "&#8314;&#185;":""}${z.endString ? `<div class="dash">&ndash;</div>` : ""}${z.endString}</div>
+        
       </div>`);
     });
   
