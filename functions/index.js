@@ -52,7 +52,7 @@ var overrides = {
 function resolveZone(z) {
   z = overrides[z.toUpperCase()] ?? z;
 
-  let gmtmatch = z.toUpperCase().match(/^GMT([+\-]\d+)$/);
+  let gmtmatch = z.toString().toUpperCase().match(/^GMT([+\-]\d+)$/);
   console.log("gmtmatch", gmtmatch, z)
   if (gmtmatch && gmtmatch[1]) z = gmtmatch[1];
 
