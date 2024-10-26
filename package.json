@@ -1,0 +1,19 @@
+{
+  "name": "timezone-fyi",
+  "description": "Timezone Tool",
+  "scripts": {
+    "dev": "netlify dev"
+  },
+  "engines": {
+    "node": "20"
+  },
+  "dependencies": {
+    "@netlify/functions": "^2.8.2",
+    "canvas": "^2.11.0",
+    "timezonecomplete": "^5.12.4"
+  },
+  "devDependencies": {
+    "firebase-functions-test": "^0.2.3"
+  },
+  "private": true
+}
