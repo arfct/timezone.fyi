@@ -9,8 +9,9 @@
   },
   "dependencies": {
     "@netlify/functions": "^2.8.2",
-    "canvas": "^2.11.0",
-    "timezonecomplete": "^5.12.4"
+    "canvas": "^2.11.2",
+    "timezonecomplete": "^5.13.1",
+    "tzdata": "^1.0.42"
   },
   "private": true
 }

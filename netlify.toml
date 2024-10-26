@@ -1,2 +1,12 @@
 [build]
   functions = "functions"
+
+[[edge_functions]]
+  path = "/*"
+  function = "metadata"
+
+
+[[redirects]]
+  from = "/*"
+  to = "/index.html"
+  status = 200

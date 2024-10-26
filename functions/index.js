@@ -1,7 +1,10 @@
 import { getZoneInfo } from "./common.js";
 
-export default async (event, context) => {
-  var path = event.path;
+export default async (req, context) => {
+  let url = new URL(req.url);
+  var path = url.pathname.replace("/.netlify/functions/index", "");
+
+  console.log("path", path);
 
   var error;
   var zoneHTML = [];
@@ -34,7 +37,7 @@ export default async (event, context) => {
     console.log({ dtstart });
     let duration = "PT" + (info.duration || 30) + "M";
     var description = zoneStrings.join("  •  ");
-    var fullUrl = req.protocol + "://" + req.get("Host") + req.url;
+
     let defaultName = "timezone.fyi event";
     var vcalendar = encodeURIComponent(
       `BEGIN:VCALENDAR
@@ -42,20 +45,15 @@ VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
 BEGIN:VEVENT
 SUMMARY:${info.label || defaultName}
-LOCATION:${fullUrl}
+LOCATION:${url.toString()}
 DESCRIPTION:${description}
 ${dtstart}
 DURATION:${duration}
 END:VEVENT
 END:VCALENDAR`
     );
-
-    return {
-      statusCode: 200,
-      headers: {
-        "Content-Type": "text/html",
-      },
-      body: `<!doctype html>
+    return new Response(
+      `<!doctype html>
       <!--${JSON.stringify(info)}-->
       <head>
         <link rel="stylesheet" type="text/css" href="/index.css">
@@ -68,7 +66,7 @@ END:VCALENDAR`
         }">
         ${
           info.zones
-            ? `<meta property="og:image" content="https://timezone.fyi/og.jpg?path=${event.path}">`
+            ? `<meta property="og:image" content="https://timezone.fyi/og.jpg?path=${req.path}">`
             : ""
         }
         <meta property="og:type" content="website">
@@ -81,15 +79,16 @@ END:VCALENDAR`
       <div id="zones">${zoneHTML.join("")}</div>
       </body>
     </html>`,
-    };
+      {
+        status: 200,
+        headers: {
+          "Content-Type": "text/html",
+        },
+      }
+    );
   }
-
-  return {
-    statusCode: 200,
-    headers: {
-      "Content-Type": "text/html",
-    },
-    body: `<!doctype html>
+  return new Response(
+    `<!doctype html>
     <head>
       <link rel="stylesheet" type="text/css" href="/index.css">
       <title>timezone.fyi</title>
@@ -109,56 +108,15 @@ END:VCALENDAR`
     </div>
     </body>
     </html>`,
-  };
+    {
+      status: 200,
+      headers: {
+        "Content-Type": "text/html",
+      },
+    }
+  );
 };
 
-var colors = [
-  "#012459",
-  "#001322",
-  "#003972",
-  "#001322",
-  "#003972",
-  "#001322",
-  "#004372",
-  "#00182b",
-  "#004372",
-  "#011d34",
-  "#016792",
-  "#00182b",
-  "#07729f",
-  "#042c47",
-  "#12a1c0",
-  "#07506e",
-  "#74d4cc",
-  "#1386a6",
-  "#efeebc",
-  "#61d0cf",
-  "#fee154",
-  "#a3dec6",
-  "#fdc352",
-  "#e8ed92",
-  "#ffac6f",
-  "#ffe467",
-  "#fda65a",
-  "#ffe467",
-  "#fd9e58",
-  "#ffe467",
-  "#f18448",
-  "#ffd364",
-  "#f06b7e",
-  "#f9a856",
-  "#ca5a92",
-  "#f4896b",
-  "#5b2c83",
-  "#d1628b",
-  "#371a79",
-  "#713684",
-  "#28166b",
-  "#45217c",
-  "#192861",
-  "#372074",
-  "#040b3c",
-  "#233072",
-  "#040b3c",
-  "#012459",
-];
+// export const config = {
+//   path: "/tz/*",
+// };

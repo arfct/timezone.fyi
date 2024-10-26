@@ -1,5 +1,5 @@
 import { Canvas } from "canvas";
-import { getZoneInfo } from "./common.js";
+import { getZoneInfo, colors } from "./common.js";
 
 export default async (event, context) => {
   console.log("PATH", event.queryStringParameters.path);
