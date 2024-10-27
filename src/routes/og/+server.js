@@ -1,6 +1,7 @@
 import sharp from "sharp";
-
 import { getZoneInfo, colors } from "$lib/timezones.js";
+
+const fontFamily = 'Arial'
 
 const generateLinearGradient = (gradientId, stops) => {
   const backgroundStops = stops
@@ -24,7 +25,7 @@ const generateZoneRect = (zone, x, y, width, height, gradientId) => {
     x="${centerX}" 
     y="${centerY}" 
     opacity="0.5"
-    font-family="sans-serif" 
+    font-family="${fontFamily}" 
     font-size="${fontSizeZone}pt" 
     text-anchor="middle" 
     fill="${textColor}"
@@ -38,7 +39,7 @@ const generateZoneRect = (zone, x, y, width, height, gradientId) => {
     y="${centerY + fontSizeTime}" 
     fill="${textColor}"
     opacity="0.8"
-    font-family="sans-serif" 
+    font-family="${fontFamily}" 
     font-size="${fontSizeTime}pt" 
     text-anchor="middle" 
     dominant-baseline="middle"
