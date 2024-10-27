@@ -6,12 +6,12 @@ import { getZoneInfo, colors } from "../common.js";
 
 
 export default async (request: Request, context: Context) => {
-//   let url = new URL(request.url);
-//   let path = url.searchParams.get("path");
-//   const info = getZoneInfo(path);
+  let url = new URL(request.url);
+  let path = url.searchParams.get("path");
+  const info = getZoneInfo(path);
 
-//   console.log("URL:", info);
-// console.log(colors)
+  console.log("URL:", info);
+
   return new ImageResponse(
     (
       <div
@@ -25,7 +25,17 @@ export default async (request: Request, context: Context) => {
           backgroundImage: "linear-gradient(#e66465, #9198e5)"
         }}
       >
-       
+        {info?.zones.map((z, i) => (  
+          <div key={i}
+            style={{  
+              backgroundImage: `linear-gradient(${colors[z.zoneStart.hour() * 2]}, ${colors[z.zoneStart.hour() * 2 + 1]})`,
+            }}
+          >
+          
+            <div>{z.niceZoneName}</div>
+            <div>{z.startString}</div>
+          </div>
+        ))}
         Hello!
       </div>
     )

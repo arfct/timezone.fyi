@@ -70,6 +70,7 @@ END:VCALENDAR`
             : ""
         }
         <meta property="og:type" content="website">
+        <script src="timezone.js"></script>
       </head>
       <body class="${info.label ? "labelled" : ""}">
       <a id="download" download="${info.label || defaultName}.ics" title="${
