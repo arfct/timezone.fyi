@@ -1,7 +1,8 @@
 import { Canvas } from "canvas";
-import { getZoneInfo, colors } from "../common.js";
+import { getZoneInfo, colors } from "$lib/timezones.js";
 
-export default async (req, context) => {
+export const GET = async (req) => {
+
   const url = new URL(req.url);
   const path = url.searchParams.get("path");
   if (!path) {
@@ -25,7 +26,7 @@ export default async (req, context) => {
     info.zones.forEach((z, i) => {
       ctx.beginPath();
       ctx.rect(width * i, 0, width, canvas.height);
-      var hour = z.zoneStart.hour();
+      var hour = z.zoneStart.hour;
       var grd = ctx.createLinearGradient(0, 0, 0, height);
       grd.addColorStop(0, colors[hour * 2]);
       grd.addColorStop(1, colors[hour * 2 + 1]);
@@ -65,4 +66,4 @@ export default async (req, context) => {
       "Cache-Control": "public, max-age=60, s-maxage=31536000",
     },
   });
-};
+}
