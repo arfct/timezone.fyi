@@ -1,12 +1,15 @@
-[build]
-  functions = "functions"
+[[redirects]]
+  from = "/og"
+  to = "/.netlify/functions/og"
+  status = 200
+  force = true
 
-[[edge_functions]]
-  path = "/*"
-  function = "metadata"
-
+[[redirects]]
+  from = "/index.css"
+  to = "/index.css"
+  status = 200
 
 [[redirects]]
   from = "/*"
-  to = "/index.html"
+  to = "/.netlify/functions/index"
   status = 200

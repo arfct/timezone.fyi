@@ -1,9 +1,13 @@
 import { Canvas } from "canvas";
-import { getZoneInfo, colors } from "./common.js";
+import { getZoneInfo, colors } from "../common.js";
 
-export default async (event, context) => {
-  console.log("PATH", event.queryStringParameters.path);
-  const info = getZoneInfo(event.queryStringParameters.path);
+export default async (req, context) => {
+  const url = new URL(req.url);
+  const path = url.searchParams.get("path");
+  if (!path) {
+    return new Response("Missing path", { status: 400 });
+  }
+  const info = getZoneInfo(path);
   const canvas = new Canvas(1200, 630);
   const ctx = canvas.getContext("2d");
 
@@ -53,14 +57,12 @@ export default async (event, context) => {
 
   const buffer = Buffer.concat(chunks);
 
-  return {
-    statusCode: 200,
+  return new Response(buffer, {
+    status: 200,
     headers: {
       "Content-Type": "image/jpeg",
       "Content-Disposition": 'attachment; filename="ogimage.jpg"',
       "Cache-Control": "public, max-age=60, s-maxage=31536000",
     },
-    body: buffer.toString("base64"),
-    isBase64Encoded: true,
-  };
+  });
 };

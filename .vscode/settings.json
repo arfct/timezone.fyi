@@ -1,0 +1,10 @@
+{
+  "deno.enable": true,
+  "deno.enablePaths": [
+    "netlify/edge_functions",
+    "netlify/edge-functions"
+  ],
+  "deno.unstable": true,
+  "deno.importMap": ".netlify/edge-functions-import-map.json",
+  "deno.path": "/Users/liquidx/Library/Preferences/netlify/deno-cli/deno"
+}

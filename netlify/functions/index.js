@@ -1,8 +1,8 @@
-import { getZoneInfo } from "./common.js";
+import { getZoneInfo } from "../common.js";
 
 export default async (req, context) => {
   let url = new URL(req.url);
-  var path = url.pathname.replace("/.netlify/functions/index", "");
+  var path = url.pathname;
 
   console.log("path", path);
 
@@ -66,7 +66,7 @@ END:VCALENDAR`
         }">
         ${
           info.zones
-            ? `<meta property="og:image" content="https://timezone.fyi/og.jpg?path=${req.path}">`
+            ? `<meta property="og:image" content="/og?path=${path}">`
             : ""
         }
         <meta property="og:type" content="website">
@@ -99,7 +99,7 @@ END:VCALENDAR`
     <h1>timezone.fyi</h1>
     This site lets you quickly share a time across multiple time zones.
     <p>Simply type a url with the following structure:
-    <br><b><a href="/10:30am,pst,est">http://timezone.fyi/10:30am,pst,est</a></b>
+    <br><b><a href="/10:30am,pst,est">https://timezone.fyi/10:30am,pst,est</a></b>
     <p>The first listed time zone will be treated as the primary. <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">List of time zone names</a>
 
     <br>When you send these via Slack, SMS, and other modern chat clients,
@@ -116,7 +116,3 @@ END:VCALENDAR`
     }
   );
 };
-
-// export const config = {
-//   path: "/tz/*",
-// };

@@ -446,7 +446,6 @@ export const getZoneInfo = (path) => {
       if (label) label = decodePrettyComponent(label.slice(0, -1));
 
       var firstZone = resolveZone(zones[0]);
-
       var start = new tc.now(tc.zone(firstZone))
         .startOfDay()
         .add(tc.hours(parseInt(groups.h1)))
