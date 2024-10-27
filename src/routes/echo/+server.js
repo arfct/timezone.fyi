@@ -11,8 +11,14 @@ const fontFamily = 'Roboto'
 
 export const GET = async (req) => {
   console.log(process.env)
-  const fontfiles = fs.readdirSync('/var/task/fonts').map(toString);
+  let error = ''
+  let fontfiles = []
+  try {
+    fontfiles = fs.readdirSync('/var/task/fonts').map(toString);
+  } catch (e) {
+    error = e.toString();
+  } 
 
-  return json({env: process.env, fontfiles});
+  return json({env: process.env, fontfiles, error});
 
 }
