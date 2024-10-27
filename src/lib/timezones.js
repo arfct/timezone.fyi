@@ -1,5 +1,8 @@
 import { DateTime } from "luxon";
 
+const isNightAfter = 18; // 6pm
+const isNightBefore = 6; // 6am
+
 var overrides = {
   ACDT: 10.5,
   ACST: 9.5,
@@ -325,7 +328,6 @@ function resolveZone(z) {
     .toString()
     .toUpperCase()
     .match(/^GMT([+\-]\d+)$/);
-  console.log("gmtmatch", gmtmatch, z);
   if (gmtmatch && gmtmatch[1]) z = gmtmatch[1];
 
   if (z.startsWith("GMT+"))
@@ -496,7 +498,7 @@ export const getZoneInfo = (path) => {
             endString ? "‑" + endString : ""
           } ${niceZoneName} ${extraDay ? " +1" : ""}`;
           var night =
-            zoneStart.hour > 14 || zoneStart.hour <= 6 ? "night" : "";
+            zoneStart.hour > isNightAfter || zoneStart.hour <= isNightBefore ? "night" : "";
           var zoneInfo = {
             description,
             night,
