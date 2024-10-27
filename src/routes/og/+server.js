@@ -1,7 +1,11 @@
 import sharp from "sharp";
 import { getZoneInfo, colors } from "$lib/timezones.js";
+import process from "process";
 
-const fontFamily = 'Arial'
+// Forces the use of the fonts in the lambda layer.
+process.env.FONTCONFIG_PATH='/var/task/fonts'
+
+const fontFamily = 'Roboto'
 
 const generateLinearGradient = (gradientId, stops) => {
   const backgroundStops = stops
