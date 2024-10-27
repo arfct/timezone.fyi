@@ -177,7 +177,6 @@ var overrides = {
   WST: 8,
   YAKT: 9,
   YEKT: 5,
-  GMT: 0,
   EDT: "America/New_York",
   EST: "America/New_York",
   ET: "America/New_York",
