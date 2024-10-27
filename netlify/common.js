@@ -1,4 +1,5 @@
 import * as tc from "timezonecomplete";
+import tzdata from "tzdata"; // here just to make sure it's included in the build
 
 var overrides = {
   ACDT: 10.5,
