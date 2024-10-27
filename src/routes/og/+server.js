@@ -84,6 +84,7 @@ const generateSvg = (width, height, zones) => {
 }
 
 export const GET = async (req) => {
+  console.log(process.env)
   const url = new URL(req.url);
   const path = url.searchParams.get("path");
   if (!path) {
