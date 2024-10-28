@@ -5,9 +5,14 @@ import { viteStaticCopy } from 'vite-plugin-static-copy'
 const staticCopyConfig = {
 	targets: [
 		{
-			src: 'static/fonts',
+			src: 'static/fonts/fonts.conf',
+			dest: 'fonts/'
+		},
+		{
+			src: 'static/fonts/Roboto-Regular-webfont.woff',
 			dest: 'fonts'
 		}
+
 	]
 }
 

@@ -3,7 +3,7 @@ import { getZoneInfo, colors } from "$lib/timezones.js";
 import process from "process";
 
 // Forces the use of the fonts in the lambda layer.
-process.env.FONTCONFIG_PATH='/var/task/fonts'
+process.env.FONTCONFIG_PATH='/var/task/.netlify/server/fonts'
 
 const fontFamily = 'Roboto'
 
