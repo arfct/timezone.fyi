@@ -1,3 +1,8 @@
 [build]
 	command = "npm run build"
 	publish = "build"
+  edge_functions = "netlify/edge-functions"
+
+[[edge_functions]]
+  path = "/ogx"
+  function = "ogx"	
