@@ -79,7 +79,7 @@ export default async (request: Request, context: Context) => {
           backgroundImage: "linear-gradient(#e66465, #9198e5)"
         }}
       >
-       
+       ${zonesElements}
       </div>
     )
   );
