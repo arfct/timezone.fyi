@@ -14,7 +14,7 @@ export const GET = async (req) => {
   let error = ''
   let taskfiles = []
   try {
-    taskfiles = fs.readdirSync('/var/task').map(toString);
+    taskfiles = fs.readdirSync('/var/task');
   } catch (e) {
     error = e.toString();
   } 
