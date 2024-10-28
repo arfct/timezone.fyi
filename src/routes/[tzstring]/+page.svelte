@@ -8,6 +8,7 @@
   let description = 'timezone.fyi'
   let timezones = [];
   let path = ''
+  let title // TODO: Extract title from first path component
 
   $: {
     path = data.tzstring;
@@ -37,9 +38,12 @@
   <meta property="og:type" content="website">
 </svelte:head>
 
+{#if title}
 <div class="flex flex-row">
-Title
+{title}
 </div>
+{/if}
+
 <div class="flex flex-row h-screen w-full">
 {#each timezones as timezone}
   <TimezoneView timezone={timezone} />
