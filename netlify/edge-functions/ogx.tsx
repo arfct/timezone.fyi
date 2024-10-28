@@ -9,7 +9,7 @@ export const emptyZoneInfo = (): any=> {
   return  {
     description: '',
   night: false,
-  zoneStart: DateTime.local(),
+  zoneStart: DateTime.now(),
   zoneEnd: null,
   emoji: '',
   niceZoneName: 'SPC',
@@ -29,8 +29,6 @@ const getZoneInfo = (path: string) : any => {
 export default async (request: Request, context: Context) => {
   let url = new URL(request.url);
   let path = url.searchParams.get("path");
-
-  console.log('colors', colors);
 
   const info = getZoneInfo(path);
   if (!info.zones) {
@@ -52,6 +50,8 @@ export default async (request: Request, context: Context) => {
   }
 
   const zones = info.zones;
+  console.log('Hours', zones.map(z => z.zoneStart.hour);
+  console.log('Colors', zones.map(z => colors[z.zoneStart.hour * 2], colors[z.zoneStart.hour * 2 + 1]);
 
   return new ImageResponse(
     (
@@ -66,7 +66,7 @@ export default async (request: Request, context: Context) => {
           backgroundImage: "linear-gradient(#e66465, #9198e5)"
         }}
       >
-        {zones.map((z, i) => (  
+        {zones.map((z: any, i: number) => (  
           <div key={i}
             style={{  
               backgroundImage: `linear-gradient(${colors[z.zoneStart.hour * 2]}, ${colors[z.zoneStart.hour * 2 + 1]})`,
@@ -83,7 +83,7 @@ export default async (request: Request, context: Context) => {
   );
 }
 
-export const config = {
+export const config : Config = {
   path: "/ogx",
   cache: "manual",
 };
