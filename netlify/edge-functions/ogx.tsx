@@ -21,6 +21,9 @@ export const emptyZoneInfo = (): any=> {
 
 const getZoneInfo = (path: string) : any => {
   let zones : any[] = [];
+  if (!path) {
+    return {}
+  }
   zones.push(emptyZoneInfo());
   return {zones};
 }
