@@ -3,6 +3,8 @@ import { ImageResponse } from "https://deno.land/x/og_edge/mod.ts";
 import React from "https://esm.sh/react@18.2.0";
 import {DateTime} from "https://esm.sh/luxon@2";
 
+import { colors } from '../../src/lib/timezones.js'
+
 export const emptyZoneInfo = (): any=> {
   return  {
     description: '',
