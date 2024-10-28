@@ -1,16 +1,54 @@
 import type { Config, Context } from "@netlify/edge-functions";
 import { ImageResponse } from "https://deno.land/x/og_edge/mod.ts";
 import React from "https://esm.sh/react@18.2.0";
+import {DateTime} from "https://esm.sh/luxon@2";
 
-import { getZoneInfo, colors } from "../common.js";
+export const emptyZoneInfo = (): any=> {
+  return  {
+    description: '',
+  night: false,
+  zoneStart: DateTime.local(),
+  zoneEnd: null,
+  emoji: '',
+  niceZoneName: 'SPC',
+  startString: '00:01 PM',
+  endString: '',
+  extraDay: false,
+};
+}
+
+const getZoneInfo = (path: string) : any => {
+  let zones : any[] = [];
+  zones.push(emptyZoneInfo());
+  return zones;
+}
 
 
 export default async (request: Request, context: Context) => {
   let url = new URL(request.url);
   let path = url.searchParams.get("path");
-  const info = getZoneInfo(path);
 
-  console.log("URL:", info);
+
+  const info = getZoneInfo(path);
+  if (!info.zones) {
+    return new ImageResponse(
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 128,
+          backgroundImage: "linear-gradient(#e66465, #9198e5)"
+        }}
+      >
+        Hello!
+      </div>
+    );
+  }
+
+  const zones = info.zones;
 
   return new ImageResponse(
     (
@@ -25,7 +63,7 @@ export default async (request: Request, context: Context) => {
           backgroundImage: "linear-gradient(#e66465, #9198e5)"
         }}
       >
-        {info?.zones.map((z, i) => (  
+        {zones.map((z, i) => (  
           <div key={i}
             style={{  
               backgroundImage: `linear-gradient(${colors[z.zoneStart.hour() * 2]}, ${colors[z.zoneStart.hour() * 2 + 1]})`,
