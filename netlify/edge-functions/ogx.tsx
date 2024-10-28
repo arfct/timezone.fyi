@@ -50,8 +50,8 @@ export default async (request: Request, context: Context) => {
   }
 
   const zones = info.zones;
-  console.log('Hours', zones.map(z => z.zoneStart.hour);
-  console.log('Colors', zones.map(z => colors[z.zoneStart.hour * 2], colors[z.zoneStart.hour * 2 + 1]);
+  console.log('Hours', zones.map(z => z.zoneStart.hour));
+  console.log('Colors', zones.map(z => colors[z.zoneStart.hour * 2]));
 
   return new ImageResponse(
     (
