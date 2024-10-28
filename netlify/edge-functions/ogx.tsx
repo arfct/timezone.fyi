@@ -20,14 +20,13 @@ export const emptyZoneInfo = (): any=> {
 const getZoneInfo = (path: string) : any => {
   let zones : any[] = [];
   zones.push(emptyZoneInfo());
-  return zones;
+  return {zones};
 }
 
 
 export default async (request: Request, context: Context) => {
   let url = new URL(request.url);
   let path = url.searchParams.get("path");
-
 
   const info = getZoneInfo(path);
   if (!info.zones) {
