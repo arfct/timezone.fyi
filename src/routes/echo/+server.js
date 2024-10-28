@@ -14,7 +14,7 @@ export const GET = async (req) => {
   let error = ''
   let taskfiles = []
   try {
-    taskfiles = fs.readdirSync('/var/task/.netlify');
+    taskfiles = fs.readdirSync('/var/task/.netlify/server');
   } catch (e) {
     error = e.toString();
   } 
