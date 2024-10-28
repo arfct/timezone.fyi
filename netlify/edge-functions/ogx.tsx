@@ -56,17 +56,15 @@ export default async (request: Request, context: Context) => {
   console.log('Hours', zones.map(z => z.zoneStart.hour));
   console.log('Colors', zones.map(z => colors[z.zoneStart.hour * 2]));
 
-  // const zonesElements =  zones.map((z: any, i: number) => (  
-  //   <div key={i}
-  //     style={{  
-  //       backgroundImage: `linear-gradient(${colors[z.zoneStart.hour * 2]}, ${colors[z.zoneStart.hour * 2 + 1]})`,
-  //     }}
-  //   >
-    
-  //     <div>{z.niceZoneName}</div>
-  //     <div>{z.startString}</div>
-  //   </div>
-  // ));
+  const zonesElements =  zones.map((z: any, i: number) => {
+    const background = `linear-gradient(${colors[z.zoneStart.hour * 2]}, ${colors[z.zoneStart.hour * 2 + 1]})`;
+    return (
+      <div key={i} style={{backgroundImage: background}}>
+        <div>{z.niceZoneName}</div>
+        <div>{z.startString}</div>
+      </div>
+    )
+  });
 
   return new ImageResponse(
     (
