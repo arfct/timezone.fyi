@@ -67,7 +67,7 @@ export default async (request: Request, context: Context) => {
         {zones.map((z, i) => (  
           <div key={i}
             style={{  
-              backgroundImage: `linear-gradient(${colors[z.zoneStart.hour() * 2]}, ${colors[z.zoneStart.hour() * 2 + 1]})`,
+              backgroundImage: `linear-gradient(${colors[z.zoneStart.hour * 2]}, ${colors[z.zoneStart.hour * 2 + 1]})`,
             }}
           >
           
