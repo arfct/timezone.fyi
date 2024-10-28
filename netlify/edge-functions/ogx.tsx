@@ -30,6 +30,8 @@ export default async (request: Request, context: Context) => {
   let url = new URL(request.url);
   let path = url.searchParams.get("path");
 
+  console.log('colors', colors);
+
   const info = getZoneInfo(path);
   if (!info.zones) {
     return new ImageResponse(
