@@ -30,7 +30,7 @@ export default async (request: Request, context: Context) => {
   let url = new URL(request.url);
   let path = url.searchParams.get("path");
 
-  const info = {}; //getZoneInfo(path);
+  const info = getZoneInfo(path);
   if (!info.zones) {
     return new ImageResponse(
       <div

@@ -37,6 +37,9 @@
   <meta property="og:type" content="website">
 </svelte:head>
 
+<div class="flex flex-row">
+Title
+</div>
 <div class="flex flex-row h-screen w-full">
 {#each timezones as timezone}
   <TimezoneView timezone={timezone} />
