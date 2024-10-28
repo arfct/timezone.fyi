@@ -80,7 +80,6 @@ export default async (request: Request, context: Context) => {
             <div>{z.startString}</div>
           </div>
         ))}
-        Hello!
       </div>
     )
   );
