@@ -5,15 +5,15 @@ import {DateTime} from "https://esm.sh/luxon@2";
 
 import { colors } from '../../src/lib/timezones.js'
 
-export const emptyZoneInfo = (): any=> {
+export const emptyZoneInfo = (zone: string): any=> {
   return  {
     description: '',
   night: false,
-  zoneStart: DateTime.now(),
+  zoneStart: DateTime.now().setZone(zone),
   zoneEnd: null,
   emoji: '',
-  niceZoneName: 'SPC',
-  startString: '00:01 PM',
+  niceZoneName: zone,
+  startString: DateTime.now().setZone(zone).toFormat('h:mm a'),
   endString: '',
   extraDay: false,
 };
@@ -24,7 +24,8 @@ const getZoneInfo = (path: string) : any => {
   if (!path) {
     return {}
   }
-  zones.push(emptyZoneInfo());
+  zones.push(emptyZoneInfo('EST'));
+  zones.push(emptyZoneInfo('PST'));
   return {zones};
 }
 
@@ -60,8 +61,9 @@ export default async (request: Request, context: Context) => {
     const background = `linear-gradient(${colors[z.zoneStart.hour * 2]}, ${colors[z.zoneStart.hour * 2 + 1]})`;
     return (
       <div key={`zone${i}`} style={{backgroundImage: background}}>
-        <div>{z.niceZoneName}</div>
-        <div>{z.startString}</div>
+        <div>Hello</div>
+        {/* <div>{z.niceZoneName}</div>
+        <div>{z.startString}</div> */}
       </div>
     )
   });
