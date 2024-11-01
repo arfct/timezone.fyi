@@ -9,7 +9,7 @@ process.env.FONTCONFIG_PATH = '/var/task/.netlify/server/fonts';
 const fontFamily = 'Roboto';
 
 export const GET = async ({ url }) => {
-	let localPath = url.searchParams.path;
+	let localPath = url.searchParams.get('path');
 	if (!localPath) {
 		localPath = '/var/task/.netlify/server';
 	}
