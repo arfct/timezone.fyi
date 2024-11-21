@@ -1,19 +1,42 @@
 import type { Config, Context } from "@netlify/edge-functions";
 import { ImageResponse } from "https://deno.land/x/og_edge/mod.ts";
 import React from "https://esm.sh/react@18.2.0";
+import {DateTime} from "https://esm.sh/luxon@2";
 
-import { getZoneInfo, colors } from "../common.js";
+import { colors } from '../../src/lib/timezones.js'
+
+export const emptyZoneInfo = (zone: string): any=> {
+  return  {
+    description: '',
+  night: false,
+  zoneStart: DateTime.now().setZone(zone),
+  zoneEnd: null,
+  emoji: '',
+  niceZoneName: zone,
+  startString: DateTime.now().setZone(zone).toFormat('h:mm a'),
+  endString: '',
+  extraDay: false,
+};
+}
+
+const getZoneInfo = (path: string) : any => {
+  let zones : any[] = [];
+  if (!path) {
+    return {}
+  }
+  zones.push(emptyZoneInfo('EST'));
+  zones.push(emptyZoneInfo('PST'));
+  return {zones};
+}
 
 
 export default async (request: Request, context: Context) => {
   let url = new URL(request.url);
   let path = url.searchParams.get("path");
+
   const info = getZoneInfo(path);
-
-  console.log("URL:", info);
-
-  return new ImageResponse(
-    (
+  if (!info.zones) {
+    return new ImageResponse(
       <div
         style={{
           width: "100%",
@@ -25,25 +48,56 @@ export default async (request: Request, context: Context) => {
           backgroundImage: "linear-gradient(#e66465, #9198e5)"
         }}
       >
-        {info?.zones.map((z, i) => (  
-          <div key={i}
-            style={{  
-              backgroundImage: `linear-gradient(${colors[z.zoneStart.hour() * 2]}, ${colors[z.zoneStart.hour() * 2 + 1]})`,
-            }}
-          >
-          
-            <div>{z.niceZoneName}</div>
-            <div>{z.startString}</div>
-          </div>
-        ))}
         Hello!
+      </div>
+    );
+  }
+
+  const zones = info.zones;
+  console.log('Hours', zones.map(z => z.zoneStart.hour));
+  console.log('Colors', zones.map(z => colors[z.zoneStart.hour * 2]));
+
+  const zonesElements =  zones.map((z: any, i: number) => {
+    const background = `linear-gradient(${colors[z.zoneStart.hour * 2]}, ${colors[z.zoneStart.hour * 2 + 1]})`;
+    const zoneStyle = {
+      backgroundImage: background,
+      display: 'flex',
+      flexDirection: 'column',
+      alignItems: 'center',
+      justifyContent: 'center',
+      fontSize: 128,
+    }
+    return (
+      <div key={`zone${i}`} style={zoneStyle}>
+        <div>Hello</div>
+        {/* <div>{z.niceZoneName}</div>
+        <div>{z.startString}</div> */}
+      </div>
+    )
+  });
+
+  return new ImageResponse(
+    (
+      <div
+        style={{
+          width: "100%",
+          height: "100%",
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          justifyContent: "center",
+          fontSize: 128,
+          backgroundImage: "linear-gradient(#9198e5, #9198e5)"
+        }}
+      >
+       ${zonesElements}
       </div>
     )
   );
 }
 
-export const config = {
-  path: "/og",
+export const config : Config = {
+  path: "/ogx",
   cache: "manual",
 };
 

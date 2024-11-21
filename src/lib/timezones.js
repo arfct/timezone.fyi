@@ -1,5 +1,7 @@
-import * as tc from "timezonecomplete";
-import tzdata from "tzdata"; // here just to make sure it's included in the build
+import { DateTime } from "luxon";
+
+const isNightAfter = 18; // 6pm
+const isNightBefore = 6; // 6am
 
 var overrides = {
   ACDT: 10.5,
@@ -175,7 +177,6 @@ var overrides = {
   WST: 8,
   YAKT: 9,
   YEKT: 5,
-  GMT: 0,
   EDT: "America/New_York",
   EST: "America/New_York",
   ET: "America/New_York",
@@ -326,16 +327,17 @@ function resolveZone(z) {
     .toString()
     .toUpperCase()
     .match(/^GMT([+\-]\d+)$/);
-  console.log("gmtmatch", gmtmatch, z);
   if (gmtmatch && gmtmatch[1]) z = gmtmatch[1];
 
   if (z.startsWith("GMT+"))
     if (isNaN(z)) {
-      let tzd = tc.TzDatabase.instance();
-      if (!tzd.exists(z)) {
-        // Uppercase for country names
-        z = z[0].toUpperCase() + z.substring(1);
-      }
+      // TODO(liquidx): Not sure what this does, luxon doesn't have a db instance.
+      // let tzd = tc.TzDatabase.instance();
+      // if (!tzd.exists(z)) {
+      //   // Uppercase for country names
+      //   z = z[0].toUpperCase() + z.substring(1);
+      // }
+      z = 0;
     } else {
       z *= 60;
     }
@@ -430,12 +432,10 @@ export const colors = [
 ];
 
 export const getZoneInfo = (path) => {
-  var error;
   var info = undefined;
   var zones = path.replace(/ /g, "+").split(/[,.]/);
 
   if (zones.length > 1) {
-    try {
       var timeString = decodeURIComponent(zones.shift());
       // Handle difference in params[0] on local vs server (firebase) looking at leading slash
       var timeRE =
@@ -447,54 +447,46 @@ export const getZoneInfo = (path) => {
       if (label) label = decodePrettyComponent(label.slice(0, -1));
 
       var firstZone = resolveZone(zones[0]);
-      var start = new tc.now(tc.zone(firstZone))
-        .startOfDay()
-        .add(tc.hours(parseInt(groups.h1)))
-        .add(tc.minutes(parseInt(groups.m1) || 0));
+      var start = DateTime.local().setZone(firstZone);
 
-      if (groups.p1 == "p" && start.hour() < 12)
-        start = start.add(tc.hours(12));
+      if (groups.p1 == "p" && start.hour < 12)
+        start = start.plus({ hours: 12 });
       var end = undefined;
       if (groups.h2) {
-        end = new tc.now(tc.zone(firstZone))
-          .startOfDay()
-          .add(tc.hours(parseInt(groups.h2)))
-          .add(tc.minutes(parseInt(groups.m2) || 0));
-        if ((groups.p2 == "p" && end.hour() < 12) || start.hour() > end.hour())
-          end = end.add(tc.hours(12));
+        end = DateTime.local().setZone(firstZone).startOf("day")
+          .plus({ hours: parseInt(groups.h2) })
+          .plus({ minutes: parseInt(groups.m2) || 0 });
+        if ((groups.p2 == "p" && end.hour < 12) || start.hour > end.hour)
+          end.plus({ hours: 12 });
       }
 
-      let duration = end ? end.diff(start).minutes() : undefined;
+      let duration = end ? end.diff(start).minutes : undefined;
       info = { zones: [], label, start, end, duration };
       zones.forEach((zone) => {
         var tzName = resolveZone(zone);
         if (zone.length) {
-          var z = (zoneInfo = {});
-          var tcz = tc.zone(tzName);
+          var tcz = tzName;
 
-          var zoneStart = start.toZone(tcz);
-          var extraDay = start.day() < zoneStart.day();
+          var zoneStart = start.setZone(tcz);
+          var extraDay = start.day < zoneStart.day;
 
-          let omitXM = false;
           var endString = "";
           if (end) {
-            var zoneEnd = end.toZone(tcz);
+            var zoneEnd = end.setZone(tcz);
             endString = zoneEnd
-              .format("h:mm a")
+              .toFormat('h:mm a')
               .replace(" PM", "ᴘᴍ")
               .replace(" AM", "ᴀᴍ")
               .replace(":00", "");
-
-            // omitXM = (zoneEnd.hour() < 12 && zoneStart.hour() < 12) || zoneEnd.hour() >= 12 && zoneStart.hour() >= 12
           }
 
           var startString = zoneStart
-            .format(omitXM ? "h:mm" : "h:mm a")
+            .toFormat('h:mm a')
             .replace(" PM", "ᴘᴍ")
             .replace(" AM", "ᴀᴍ")
             .replace(":00", "");
 
-          var emoji = hourMoji[zoneStart.hour() % 12];
+          var emoji = hourMoji[zoneStart.hour % 12];
           var niceZoneName = zone
             .split("/")
             .pop()
@@ -505,7 +497,7 @@ export const getZoneInfo = (path) => {
             endString ? "‑" + endString : ""
           } ${niceZoneName} ${extraDay ? " +1" : ""}`;
           var night =
-            zoneStart.hour() > 14 || zoneStart.hour() <= 6 ? "night" : "";
+            zoneStart.hour > isNightAfter || zoneStart.hour <= isNightBefore ? "night" : "";
           var zoneInfo = {
             description,
             night,
@@ -520,9 +512,6 @@ export const getZoneInfo = (path) => {
           info.zones.push(zoneInfo);
         }
       });
-    } catch (e) {
-      return { error: e.message };
-    }
 
     return info;
   }

@@ -1,13 +1,8 @@
 [build]
-  edge_functions = "./netlify/edge-functions-disabled"
+	command = "npm run build"
+	publish = "build"
+  edge_functions = "netlify/edge-functions"
 
-[[redirects]]
-  from = "/og"
-  to = "/.netlify/functions/og"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/index"
-  status = 200
+[[edge_functions]]
+  path = "/ogx"
+  function = "ogx"	
