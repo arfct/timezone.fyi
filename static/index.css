@@ -80,8 +80,11 @@ h2 {
   flex-direction: column;
   align-items: center;
   justify-content: center;
+  gap: 0.6em;
   width: 9em;
   height: 9em;
+  flex-shrink: 0;
+  overflow: hidden;
   border-radius: 1.2em;
   font-size: 1em;
   text-decoration: none;
@@ -90,7 +93,6 @@ h2 {
   backdrop-filter: blur(100px);
   -webkit-backdrop-filter: blur(100px);
   border: 1px solid rgba(255,255,255,0.25);
-  gap: 0.5em;
   cursor: pointer;
   transition: background 0.15s;
 }
@@ -106,8 +108,45 @@ h2 {
 }
 
 .cal-option-icon {
-  font-size: 2.2em;
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
   line-height: 1;
+}
+
+.cal-option-icon img {
+  width: 55%;
+  height: auto;
+}
+
+#cal-opt-ics .cal-option-icon {
+  font-size: 5em;
+}
+
+#cal-modal-close {
+  position: fixed;
+  top: 0.5em;
+  right: 0.5em;
+  font-size: 5vmin;
+  min-width: 2em;
+  height: 2em;
+  display: flex;
+  justify-content: center;
+  align-items: center;
+  z-index: 201;
+  border-radius: 100px;
+  border: none;
+  cursor: pointer;
+  background: rgba(255,255,255,0.18);
+  backdrop-filter: blur(100px);
+  -webkit-backdrop-filter: blur(100px);
+  color: white;
+}
+
+#cal-modal-close:hover {
+  background: rgba(255,255,255,0.3);
+  color: white;
 }
 
 body {

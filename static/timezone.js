@@ -25,18 +25,24 @@ document.addEventListener("DOMContentLoaded", function () {
   var btn = document.getElementById("cal-btn");
   var modal = document.getElementById("cal-modal");
   var backdrop = document.getElementById("cal-modal-backdrop");
+  var closeBtn = document.getElementById("cal-modal-close");
 
   if (!btn || !modal) return;
 
-  btn.addEventListener("click", function () {
-    modal.classList.add("open");
-  });
+  function openModal() { modal.classList.add("open"); }
+  function closeModal() { modal.classList.remove("open"); }
 
-  backdrop.addEventListener("click", function () {
-    modal.classList.remove("open");
+  btn.addEventListener("click", openModal);
+  backdrop.addEventListener("click", closeModal);
+  closeBtn.addEventListener("click", closeModal);
+
+  // Dismiss after choosing an option
+  ["cal-opt-gcal", "cal-opt-ics"].forEach(function (id) {
+    var el = document.getElementById(id);
+    if (el) el.addEventListener("click", function () { setTimeout(closeModal, 150); });
   });
 
   document.addEventListener("keydown", function (e) {
-    if (e.key === "Escape") modal.classList.remove("open");
+    if (e.key === "Escape") closeModal();
   });
 });

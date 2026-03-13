@@ -88,13 +88,14 @@ END:VCALENDAR`
       <button id="cal-btn" title="Add to Calendar"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 25 25"><mask id="a" width="25" height="25" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path d="M.352.121h24v24h-24z"/></mask><g mask="url(#a)"><path d="M17.352 22.12v-3h-3v-2h3v-3h2v3h3v2h-3v3h-2Zm-12-2c-.55 0-1.021-.195-1.413-.586a1.928 1.928 0 0 1-.587-1.413v-12c0-.55.196-1.021.587-1.412a1.927 1.927 0 0 1 1.413-.588h1v-2h2v2h6v-2h2v2h1c.55 0 1.02.196 1.413.588.391.39.587.862.587 1.412v6.1a6.733 6.733 0 0 0-2 0v-2.1h-12v8h7c0 .333.025.666.075 1 .05.333.142.666.275 1h-7.35Zm0-12h12v-2h-12v2Z"/></g></svg></button>
       <div id="cal-modal">
         <div id="cal-modal-backdrop"></div>
+        <button id="cal-modal-close" aria-label="Close">✕</button>
         <div id="cal-modal-content">
-          <a class="cal-option" href="${gcalUrl}" target="_blank" rel="noopener noreferrer">
-            <span class="cal-option-icon">📅</span>
+          <a class="cal-option" id="cal-opt-gcal" href="${gcalUrl}" target="_blank" rel="noopener noreferrer">
+            <span class="cal-option-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" width="48" height="48" alt="Google Calendar"></span>
             <span>Google Calendar</span>
           </a>
-          <a class="cal-option" download="${info.label || defaultName}.ics" href="data:text/calendar;charset=utf8,${vcalendar}">
-            <span class="cal-option-icon">📥</span>
+          <a class="cal-option" id="cal-opt-ics" download="${info.label || defaultName}.ics" href="data:text/calendar;charset=utf8,${vcalendar}">
+            <span class="cal-option-icon">📅</span>
             <span>ICS File</span>
           </a>
         </div>
