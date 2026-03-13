@@ -1,3 +1,4 @@
+import * as tc from "timezonecomplete";
 import { getZoneInfo } from "../common.js";
 
 export default async (req, context) => {
@@ -52,6 +53,17 @@ DURATION:${duration}
 END:VEVENT
 END:VCALENDAR`
     );
+
+    // Build Google Calendar URL using UTC times
+    const pad2 = n => String(n).padStart(2, "0");
+    const gcalFmt = dt => {
+      const u = dt.toZone(tc.zone("UTC"));
+      return `${u.year()}${pad2(u.month())}${pad2(u.day())}T${pad2(u.hour())}${pad2(u.minute())}${pad2(u.second())}Z`;
+    };
+    const endTime = info.end || info.start.add(tc.minutes(30));
+    const gcalDates = `${gcalFmt(info.start)}/${gcalFmt(endTime)}`;
+    const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(info.label || defaultName)}&dates=${gcalDates}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(url.toString())}`;
+
     return new Response(
       `<!doctype html>
       <!--${JSON.stringify(info)}-->
@@ -70,12 +82,23 @@ END:VCALENDAR`
             : ""
         }
         <meta property="og:type" content="website">
-        <script src="timezone.js"></script>
+        <script src="/timezone.js"></script>
       </head>
       <body class="${info.label ? "labelled" : ""}">
-      <a id="download" download="${info.label || defaultName}.ics" title="${
-        info.label || description
-      }" href="data:text/calendar;charset=utf8,${vcalendar}" target="_blank" rel="noopener noreferrer"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 25 25"><mask id="a" width="25" height="25" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path d="M.352.121h24v24h-24z"/></mask><g mask="url(#a)"><path d="M17.352 22.12v-3h-3v-2h3v-3h2v3h3v2h-3v3h-2Zm-12-2c-.55 0-1.021-.195-1.413-.586a1.928 1.928 0 0 1-.587-1.413v-12c0-.55.196-1.021.587-1.412a1.927 1.927 0 0 1 1.413-.588h1v-2h2v2h6v-2h2v2h1c.55 0 1.02.196 1.413.588.391.39.587.862.587 1.412v6.1a6.733 6.733 0 0 0-2 0v-2.1h-12v8h7c0 .333.025.666.075 1 .05.333.142.666.275 1h-7.35Zm0-12h12v-2h-12v2Z"/></g></svg></a>
+      <button id="cal-btn" title="Add to Calendar"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 25 25"><mask id="a" width="25" height="25" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path d="M.352.121h24v24h-24z"/></mask><g mask="url(#a)"><path d="M17.352 22.12v-3h-3v-2h3v-3h2v3h3v2h-3v3h-2Zm-12-2c-.55 0-1.021-.195-1.413-.586a1.928 1.928 0 0 1-.587-1.413v-12c0-.55.196-1.021.587-1.412a1.927 1.927 0 0 1 1.413-.588h1v-2h2v2h6v-2h2v2h1c.55 0 1.02.196 1.413.588.391.39.587.862.587 1.412v6.1a6.733 6.733 0 0 0-2 0v-2.1h-12v8h7c0 .333.025.666.075 1 .05.333.142.666.275 1h-7.35Zm0-12h12v-2h-12v2Z"/></g></svg></button>
+      <div id="cal-modal">
+        <div id="cal-modal-backdrop"></div>
+        <div id="cal-modal-content">
+          <a class="cal-option" href="${gcalUrl}" target="_blank" rel="noopener noreferrer">
+            <span class="cal-option-icon">📅</span>
+            <span>Google Calendar</span>
+          </a>
+          <a class="cal-option" download="${info.label || defaultName}.ics" href="data:text/calendar;charset=utf8,${vcalendar}">
+            <span class="cal-option-icon">📥</span>
+            <span>ICS File</span>
+          </a>
+        </div>
+      </div>
       <div id="header"><span>${info.label || ""}</span></div>
       <div id="zones">${zoneHTML.join("")}</div>
       </body>
@@ -93,6 +116,7 @@ END:VCALENDAR`
     <head>
       <link rel="stylesheet" type="text/css" href="/index.css">
       <title>timezone.fyi</title>
+      <script src="/timezone.js"></script>
     </head>
     <body style="font-family:sans-serif">
     <div class="content">
