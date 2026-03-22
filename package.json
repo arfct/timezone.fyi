@@ -2,19 +2,18 @@
   "name": "timezone-fyi",
   "description": "Timezone Tool",
   "scripts": {
-    "dev": "netlify dev"
+    "dev": "netlify dev",
+    "build:airports": "node scripts/build-airport-map.mjs"
   },
   "engines": {
     "node": "20"
   },
   "dependencies": {
     "@netlify/functions": "^2.8.2",
-    "canvas": "^2.11.2",
+    "canvas": "^3.2.2",
     "timezonecomplete": "^5.13.1",
     "tzdata": "^1.0.42"
   },
-  "devDependencies": {
-    "airport-timezone": "^1.1.1"
-  },
+  "devDependencies": {},
   "private": true
 }
