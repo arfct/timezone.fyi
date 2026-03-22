@@ -192,6 +192,15 @@ var overrides = {
   KST: "Asia/Seoul",
   KDT: "Asia/Seoul",
   IST: "Asia/Kolkata",
+  // IATA metropolitan area codes not covered by airport-map-data.json
+  // Most metro codes (NYC, LON, TYO, PAR, etc.) are now in the JSON via
+  // lxndrblz/Airports citycodes.csv. Only keep overrides here for codes that
+  // are absent or incorrect in that dataset.
+  TCI: "Atlantic/Canary",   // Tenerife — lxndrblz maps TCI to a Russian airport
+  QDF: "America/Chicago",   // Dallas/Fort Worth — not in lxndrblz
+  QHO: "America/Chicago",   // Houston — not in lxndrblz
+  QMI: "America/New_York",  // Miami — not in lxndrblz
+
   // City/colloquial aliases that are not IATA airport codes
   SF: "America/Los_Angeles",
   MTV: "America/Los_Angeles",  // Mountain View
