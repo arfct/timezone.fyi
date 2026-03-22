@@ -154,7 +154,7 @@ body {
   flex-direction: column;
   justify-content: center;
   align-items: center;
-  height:100%;
+  min-height:100vh;
   margin:0;
 }
 
@@ -180,7 +180,7 @@ padding:0, 1em;
   display: none;
 }
 .content {
-  margin-top:10vh;
+  margin-top:0;
   width: 500px;
   max-width:100%;
   line-height:150%;
