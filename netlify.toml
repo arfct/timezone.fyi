@@ -1,5 +1,11 @@
 [build]
+  publish = "static"
+  functions = "netlify/functions"
   edge_functions = "./netlify/edge-functions-disabled"
+
+[dev]
+  functions = "netlify/functions"
+  publish = "static"
 
 [[redirects]]
   from = "/og"

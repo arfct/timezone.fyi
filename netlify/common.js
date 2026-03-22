@@ -445,6 +445,7 @@ export const getZoneInfo = (path) => {
       var timeRE =
         /\/?(?<label>[^\/]+\/)?(?<h1>\d?\d):?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d?\d)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/;
       var match = timeString.match(timeRE);
+      if (!match) return { error: `Could not parse time from: ${timeString}` };
       var groups = match.groups;
 
       var label = groups.label;
