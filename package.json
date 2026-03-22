@@ -13,5 +13,8 @@
     "timezonecomplete": "^5.13.1",
     "tzdata": "^1.0.42"
   },
+  "devDependencies": {
+    "airport-timezone": "^1.1.1"
+  },
   "private": true
 }
