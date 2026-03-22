@@ -3,7 +3,8 @@
   "description": "Timezone Tool",
   "scripts": {
     "dev": "netlify dev",
-    "build:airports": "node scripts/build-airport-map.mjs"
+    "build:airports": "node scripts/build-airport-map.mjs",
+    "test": "node netlify/airport-map.test.js && node netlify/resolve-zone.test.js && node netlify/og.test.js"
   },
   "engines": {
     "node": "20"
