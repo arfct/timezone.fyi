@@ -109,3 +109,15 @@ package-lock.json
 
 # Local Netlify folder
 .netlify
+
+# AI development tools (local only)
+.ai/
+.claude/
+
+# Deno lockfile — edge functions are currently disabled
+deno.lock
+
+# OurAirports source data — not committed (123 KB precomputed map is in netlify/airport-map-data.json)
+# To regenerate: download from https://davidmegginson.github.io/ourairports-data/airports.csv
+#   then run: npm run build:airports
+airports.csv
