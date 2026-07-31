@@ -9,7 +9,6 @@
   },
   "dependencies": {
     "@netlify/functions": "^2.8.2",
-    "canvas": "^2.11.2",
     "timezonecomplete": "^5.13.1",
     "tzdata": "^1.0.42"
   },
