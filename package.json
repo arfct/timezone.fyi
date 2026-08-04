@@ -2,7 +2,8 @@
   "name": "timezone-fyi",
   "description": "Timezone Tool",
   "scripts": {
-    "dev": "netlify dev"
+    "dev": "netlify dev",
+    "test": "vitest run"
   },
   "engines": {
     "node": "20"
@@ -12,5 +13,8 @@
     "timezonecomplete": "^5.13.1",
     "tzdata": "^1.0.42"
   },
-  "private": true
+  "private": true,
+  "devDependencies": {
+    "vitest": "^4.1.0"
+  }
 }

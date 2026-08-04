@@ -1,5 +1,10 @@
 import * as tc from "timezonecomplete";
-import tzdata from "tzdata"; // here just to make sure it's included in the build
+// Present only so the bundler includes tzdata. The `with { type: "json" }`
+// attribute is required: tzdata's package main is timezone-data.json, and
+// without it Node refuses the import with ERR_IMPORT_ATTRIBUTE_MISSING, which
+// makes this module — and everything importing it — impossible to load or test
+// outside the bundler.
+import tzdata from "tzdata" with { type: "json" };
 
 var overrides = {
   ACDT: 10.5,

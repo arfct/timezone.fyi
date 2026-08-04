@@ -24,6 +24,35 @@ function escapeXml(text) {
 }
 
 /**
+ * Latin small capitals (Unicode Phonetic Extensions) to ordinary capitals.
+ *
+ * common.js formats times as `10:30ᴀᴍ` using U+1D00 and U+1D0D. That is a
+ * deliberate typographic choice for the web page, where a web font supplies the
+ * glyphs — but essentially no font ships the Phonetic Extensions block, so a
+ * rasterizer draws missing-glyph boxes instead. Verified: Manrope renders
+ * `10:30ᴀᴍ` as "10:30" followed by two tofu blocks.
+ *
+ * Only A, M and P occur in practice; the rest are here so a future format
+ * change cannot reintroduce tofu silently.
+ */
+const SMALL_CAPS = {
+  "ᴀ": "A", "ᴃ": "B", "ᴄ": "C", "ᴅ": "D", "ᴇ": "E",
+  "ᴊ": "J", "ᴋ": "K", "ᴍ": "M", "ᴎ": "N", "ᴏ": "O",
+  "ᴘ": "P", "ᴙ": "R", "ᴛ": "T", "ᴜ": "U", "ᴠ": "V",
+  "ᴡ": "W", "ᴢ": "Z",
+};
+
+/** Replaces small-capital letters with ordinary capitals. */
+export function normalizeSmallCaps(text) {
+  return String(text ?? "").replace(/[ᴀ-ᴫ]/g, (c) => SMALL_CAPS[c] ?? c);
+}
+
+/** Escape for XML, with small capitals folded to letters a font actually has. */
+function label(text) {
+  return escapeXml(normalizeSmallCaps(text));
+}
+
+/**
  * @param {{ zones?: Array<{ zoneStart: any, niceZoneName: string, startString: string, night: string }> }} info
  * @returns {string} an SVG document
  */
@@ -65,10 +94,10 @@ export function zonesSvg(info) {
         `<rect x="${x}" y="0" width="${columnWidth}" height="${HEIGHT}" fill="url(#g${i})"/>` +
         `<text x="${centre}" y="${HEIGHT / 2 - fontSize / 2}" text-anchor="middle" ` +
         `font-family="Manrope" font-size="${fontSize / 1.5}" fill="${fill}" ` +
-        `fill-opacity="0.65">${escapeXml(z.niceZoneName)}</text>` +
+        `fill-opacity="0.65">${label(z.niceZoneName)}</text>` +
         `<text x="${centre}" y="${HEIGHT / 2 + fontSize}" text-anchor="middle" ` +
         `font-family="Manrope" font-size="${fontSize}" font-weight="700" fill="${fill}" ` +
-        `fill-opacity="0.9">${escapeXml(z.startString)}</text>`
+        `fill-opacity="0.9">${label(z.startString)}</text>`
       );
     })
     .join("");
