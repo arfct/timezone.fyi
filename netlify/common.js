@@ -1,10 +1,21 @@
 import * as tc from "timezonecomplete";
-// Present only so the bundler includes tzdata. The `with { type: "json" }`
-// attribute is required: tzdata's package main is timezone-data.json, and
-// without it Node refuses the import with ERR_IMPORT_ATTRIBUTE_MISSING, which
-// makes this module — and everything importing it — impossible to load or test
-// outside the bundler.
+// The `with { type: "json" }` attribute is required: tzdata's package main is
+// timezone-data.json, and without it Node refuses the import with
+// ERR_IMPORT_ATTRIBUTE_MISSING, making this module — and everything importing
+// it — impossible to load or test outside a bundler.
 import tzdata from "tzdata" with { type: "json" };
+
+// Hand the data to timezonecomplete explicitly.
+//
+// Importing tzdata is not enough on its own. Left to itself, timezonecomplete
+// locates the data with `require(tzDataName)` — a deliberately dynamic require,
+// commented in its source as avoiding browserify problems. Node resolves that at
+// runtime, so this worked on Netlify by accident, but a bundled runtime with no
+// runtime `require` (Cloudflare Workers) cannot, and every zone lookup fails
+// with "Timezonecomplete needs time zone data".
+//
+// TzDatabase.init is the library's documented injection point.
+tc.TzDatabase.init(tzdata);
 
 var overrides = {
   ACDT: 10.5,

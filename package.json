@@ -3,7 +3,8 @@
   "description": "Timezone Tool",
   "scripts": {
     "dev": "netlify dev",
-    "test": "vitest run"
+    "test": "vitest run",
+    "dev:worker": "wrangler dev"
   },
   "engines": {
     "node": "20"

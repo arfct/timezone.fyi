@@ -1,0 +1,24 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  "name": "timezone-fyi",
+  "account_id": "c0912e10eadeaa117b0067ab29b55da6",
+  "main": "src/index.js",
+  "compatibility_date": "2026-07-01",
+  "compatibility_flags": ["nodejs_compat"],
+  // Explicit: adding a `routes` block silently flips this to false and takes
+  // the *.workers.dev URL offline.
+  "workers_dev": true,
+  "observability": { "enabled": true },
+  "assets": {
+    // Same precedence as Netlify: /index.css, /timezone.js, /favicon.ico and
+    // / itself (static/index.html) are served as files; every other path falls
+    // through to the Worker.
+    "directory": "./static",
+    "not_found_handling": "none"
+  },
+  // Reaching og-svg over HTTP from here fails with Cloudflare error 1042 —
+  // a Worker cannot fetch another Worker on the same workers.dev zone.
+  "services": [
+    { "binding": "RENDER", "service": "og-svg" }
+  ]
+}
