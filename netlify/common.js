@@ -335,28 +335,57 @@ var overrides = {
 
 // in: string
 // out: canonical city name, or original argument
-function resolveZone(z) {
-  z = overrides[z.toUpperCase()] ?? z;
+/**
+ * Tries a zone name against the database in a few common casings.
+ *
+ * Returns the first form the database recognises, or the input unchanged so the
+ * caller's existing "non-existing time zone name" error still surfaces.
+ */
+function normalizeZoneName(name) {
+  const tzd = tc.TzDatabase.instance();
+  const titleCase = name.replace(
+    /[^/_]+/g,
+    (part) => part.charAt(0).toUpperCase() + part.slice(1).toLowerCase(),
+  );
+  for (const candidate of [name, name.toUpperCase(), titleCase]) {
+    try {
+      if (tzd.exists(candidate)) return candidate;
+    } catch {
+      // exists() throws on some malformed input; treat as "not this one".
+    }
+  }
+  return name;
+}
 
-  let gmtmatch = z
-    .toString()
+function resolveZone(z) {
+  // An IANA name has to arrive percent-encoded, since the path is comma
+  // separated and the name contains a slash. Decode before looking anything up.
+  if (typeof z === "string") {
+    try {
+      z = decodeURIComponent(z);
+    } catch {
+      // Leave malformed escapes alone.
+    }
+  }
+
+  z = overrides[String(z).toUpperCase()] ?? z;
+
+  const gmtmatch = String(z)
     .toUpperCase()
     .match(/^GMT([+\-]\d+)$/);
-  console.log("gmtmatch", gmtmatch, z);
   if (gmtmatch && gmtmatch[1]) z = gmtmatch[1];
 
-  if (z.startsWith("GMT+"))
-    if (isNaN(z)) {
-      let tzd = tc.TzDatabase.instance();
-      if (!tzd.exists(z)) {
-        // Uppercase for country names
-        z = z[0].toUpperCase() + z.substring(1);
-      }
-    } else {
-      z *= 60;
-    }
+  // Previously this whole branch sat under `if (z.startsWith("GMT+"))`, with no
+  // braces, so it ran for essentially nothing — and called .startsWith on the
+  // numbers that `overrides` yields, throwing "z.startsWith is not a function".
+  if (String(z).length === 0) return z;
 
-  return z;
+  if (isNaN(z)) {
+    return normalizeZoneName(String(z));
+  }
+
+  // A bare number is an offset in hours; timezonecomplete wants minutes.
+  return Number(z) * 60;
 }
 
 function decodePrettyComponent(s) {
@@ -511,7 +540,17 @@ export const getZoneInfo = (path) => {
             .replace(":00", "");
 
           var emoji = hourMoji[zoneStart.hour() % 12];
-          var niceZoneName = zone
+          // Labelled from the URL token rather than the resolved zone: an
+          // abbreviation should stay "JST", and a numeric-offset zone
+          // resolves to a number. Decode first, or an encoded slash never
+          // splits and the label reads "ASIA%2FTOKYO".
+          var zoneLabel = zone;
+          try {
+            zoneLabel = decodeURIComponent(zone);
+          } catch {
+            // Leave malformed escapes alone.
+          }
+          var niceZoneName = zoneLabel
             .split("/")
             .pop()
             .replace(/_/g, " ")

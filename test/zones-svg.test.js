@@ -63,6 +63,82 @@ describe("zonesSvg with real zone data", () => {
   });
 });
 
+describe("resolveZone, via getZoneInfo", () => {
+  const zonesFor = (path) => getZoneInfo(path)?.zones ?? [];
+
+  it("resolves an uppercase abbreviation mapped to an IANA name", () => {
+    expect(zonesFor("/10:30am,pst,est")).toHaveLength(2);
+  });
+
+  it("resolves a lowercase UTC", () => {
+    // 'utc' never normalized, so this failed with "non-existing time zone name".
+    expect(zonesFor("/2pm,utc")).toHaveLength(1);
+  });
+
+  it("resolves an uppercase UTC", () => {
+    expect(zonesFor("/2pm,UTC")).toHaveLength(1);
+  });
+
+  it("resolves an abbreviation that maps to a numeric offset", () => {
+    // JST has only a numeric entry (9), and a number reached z.startsWith,
+    // throwing "z.startsWith is not a function".
+    expect(zonesFor("/2pm,jst")).toHaveLength(1);
+  });
+
+  it("places a numeric-offset zone at the right time", () => {
+    // 2pm UTC is 11pm JST (UTC+9). The offset is hours, converted to minutes.
+    const [z] = zonesFor("/2pm,utc,jst").slice(-1);
+    expect(z.startString).toContain("11");
+  });
+
+  it("still resolves a GMT offset", () => {
+    expect(zonesFor("/2pm,gmt+5")).toHaveLength(1);
+  });
+
+  it("resolves a percent-encoded IANA name", () => {
+    expect(zonesFor("/2pm,Asia%2FTokyo")).toHaveLength(1);
+  });
+
+  it("resolves a lowercase percent-encoded IANA name", () => {
+    expect(zonesFor("/2pm,asia%2Ftokyo")).toHaveLength(1);
+  });
+
+  it("resolves an underscored IANA name regardless of case", () => {
+    expect(zonesFor("/2pm,america%2Fnew_york")).toHaveLength(1);
+  });
+
+  it("labels a percent-encoded IANA zone by its city", () => {
+    // The label comes from the raw URL token, so an encoded slash left it as
+    // "ASIA%2FTOKYO" once these paths started resolving.
+    expect(zonesFor("/2pm,Asia%2FTokyo")[0].niceZoneName).toBe("TOKYO");
+  });
+
+  it("turns underscores in a city name into non-breaking spaces", () => {
+    // U+00A0, not a plain space — the existing code uses a non-breaking space
+    // so a two-word city does not wrap in the UI. Asserted explicitly so it is
+    // not "corrected" to U+0020 by someone reading the rendered output.
+    expect(zonesFor("/2pm,america%2Fnew_york")[0].niceZoneName).toBe("NEW YORK");
+  });
+
+  it("labels an abbreviation by the abbreviation", () => {
+    // Not by the resolved zone, which for a numeric override is just a number.
+    expect(zonesFor("/2pm,jst")[0].niceZoneName).toBe("JST");
+    expect(zonesFor("/2pm,pst")[0].niceZoneName).toBe("PST");
+  });
+
+  it("reports an unknown zone as an error rather than throwing", () => {
+    const info = getZoneInfo("/2pm,notazonename");
+    expect(info.error).toBeTruthy();
+    expect(info.zones ?? []).toHaveLength(0);
+  });
+
+  it("does not throw on any input", () => {
+    for (const p of ["/", "/2pm", "/2pm,", "/,,,", "/garbage", "/2pm,jst,utc,gmt+5"]) {
+      expect(() => getZoneInfo(p)).not.toThrow();
+    }
+  });
+});
+
 describe("zonesSvg fallbacks", () => {
   it("produces a card when a path yields no zones", () => {
     // Real input that does not parse — production returns 502 for this today.
