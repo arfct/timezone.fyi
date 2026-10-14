@@ -84,8 +84,8 @@ END:VCALENDAR`
         <meta property="og:type" content="website">
         <script src="/timezone.js"></script>
       </head>
-      <body class="${info.label ? "labelled" : ""}">
-      <button id="cal-btn" title="Add to Calendar"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 25 25"><mask id="a" width="25" height="25" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path d="M.352.121h24v24h-24z"/></mask><g mask="url(#a)"><path d="M17.352 22.12v-3h-3v-2h3v-3h2v3h3v2h-3v3h-2Zm-12-2c-.55 0-1.021-.195-1.413-.586a1.928 1.928 0 0 1-.587-1.413v-12c0-.55.196-1.021.587-1.412a1.927 1.927 0 0 1 1.413-.588h1v-2h2v2h6v-2h2v2h1c.55 0 1.02.196 1.413.588.391.39.587.862.587 1.412v6.1a6.733 6.733 0 0 0-2 0v-2.1h-12v8h7c0 .333.025.666.075 1 .05.333.142.666.275 1h-7.35Zm0-12h12v-2h-12v2Z"/></g></svg></button>
+      <body class="${info.label ? "labelled" : ""} ${info.live ? "live" : ""}">
+      ${info.live ? "" : `<button id="cal-btn" title="Add to Calendar"><svg xmlns="http://www.w3.org/2000/svg" fill="currentColor" viewBox="0 0 25 25"><mask id="a" width="25" height="25" x="0" y="0" maskUnits="userSpaceOnUse" style="mask-type:alpha"><path d="M.352.121h24v24h-24z"/></mask><g mask="url(#a)"><path d="M17.352 22.12v-3h-3v-2h3v-3h2v3h3v2h-3v3h-2Zm-12-2c-.55 0-1.021-.195-1.413-.586a1.928 1.928 0 0 1-.587-1.413v-12c0-.55.196-1.021.587-1.412a1.927 1.927 0 0 1 1.413-.588h1v-2h2v2h6v-2h2v2h1c.55 0 1.02.196 1.413.588.391.39.587.862.587 1.412v6.1a6.733 6.733 0 0 0-2 0v-2.1h-12v8h7c0 .333.025.666.075 1 .05.333.142.666.275 1h-7.35Zm0-12h12v-2h-12v2Z"/></g></svg></button>
       <div id="cal-modal">
         <div id="cal-modal-backdrop"></div>
         <button id="cal-modal-close" aria-label="Close">✕</button>
@@ -99,7 +99,7 @@ END:VCALENDAR`
             <span>ICS File</span>
           </a>
         </div>
-      </div>
+      </div>`}
       <div id="header"><span>${info.label || ""}</span></div>
       <div id="zones">${zoneHTML.join("")}</div>
       </body>
@@ -127,6 +127,7 @@ END:VCALENDAR`
     <p>Simply type a url with the following structure:
     <br><b><a href="/10:30am,pst,est">https://timezone.fyi/10:30am,pst,est</a></b>
     <p>The first listed time zone will be treated as the primary. <a href="https://en.wikipedia.org/wiki/List_of_tz_database_time_zones">List of time zone names</a>
+    <p>Use <b><a href="/now,pst,est">now</a></b> instead of a time for a live clock that keeps itself current.
 
     <br>When you send these via Slack, SMS, and other modern chat clients,
     <br>they'll expand to show times in every listed zone.
