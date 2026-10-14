@@ -10,9 +10,10 @@ URLs encode a time and one or more zones:
 https://timezone.fyi/10:30am,pst,est
 https://timezone.fyi/2pm,JFK,LHR,NRT
 https://timezone.fyi/my-meeting/10am,NYC,LON,TOK
+https://timezone.fyi/now,cst,pst
 ```
 
-- **First segment** — time string (`10am`, `10:30am`, `10am-2pm` for a range)
+- **First segment** — time string (`10am`, `10:30am`, `10am-2pm` for a range), or `now` for a live clock that updates every minute
 - **Remaining segments** — timezone codes, separated by commas or periods
 - **Optional label** — prefix the time with `label/` to name the event
 

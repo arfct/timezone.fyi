@@ -347,36 +347,50 @@ export const getZoneInfo = (path) => {
   if (zones.length > 1) {
     try {
       var timeString = decodeURIComponent(zones.shift());
-      // Handle difference in params[0] on local vs server (firebase) looking at leading slash
-      var timeRE =
-        /\/?(?<label>[^\/]+\/)?(?<h1>\d?\d):?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d?\d)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/;
-      var match = timeString.match(timeRE);
-      if (!match) return { error: `Could not parse time from: ${timeString}` };
-      var groups = match.groups;
 
-      var label = groups.label;
-      if (label) label = decodePrettyComponent(label.slice(0, -1));
-
+      // "now" in place of a time (e.g. /now,cst,pst or /standup/now,cst,pst)
+      // renders the current minute; the page keeps itself up to date.
       var firstZone = resolveZone(zones[0]);
-      var start = new tc.now(tc.zone(firstZone))
-        .startOfDay()
-        .add(tc.hours(parseInt(groups.h1)))
-        .add(tc.minutes(parseInt(groups.m1) || 0));
+      var label, start, end, live;
+      var nowMatch = timeString.match(/^\/?(?:(?<label>[^\/]+)\/)?now$/i);
+      if (nowMatch) {
+        live = true;
+        label = nowMatch.groups.label;
+        if (label) label = decodePrettyComponent(label);
+        var current = tc.now(tc.zone(firstZone));
+        start = current
+          .sub(tc.seconds(current.second()))
+          .sub(tc.milliseconds(current.millisecond()));
+      } else {
+        // Handle difference in params[0] on local vs server (firebase) looking at leading slash
+        var timeRE =
+          /\/?(?<label>[^\/]+\/)?(?<h1>\d?\d):?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d?\d)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/;
+        var match = timeString.match(timeRE);
+        if (!match) return { error: `Could not parse time from: ${timeString}` };
+        var groups = match.groups;
 
-      if (groups.p1 == "p" && start.hour() < 12)
-        start = start.add(tc.hours(12));
-      var end = undefined;
-      if (groups.h2) {
-        end = new tc.now(tc.zone(firstZone))
+        label = groups.label;
+        if (label) label = decodePrettyComponent(label.slice(0, -1));
+
+        start = new tc.now(tc.zone(firstZone))
           .startOfDay()
-          .add(tc.hours(parseInt(groups.h2)))
-          .add(tc.minutes(parseInt(groups.m2) || 0));
-        if ((groups.p2 == "p" && end.hour() < 12) || start.hour() > end.hour())
-          end = end.add(tc.hours(12));
+          .add(tc.hours(parseInt(groups.h1)))
+          .add(tc.minutes(parseInt(groups.m1) || 0));
+
+        if (groups.p1 == "p" && start.hour() < 12)
+          start = start.add(tc.hours(12));
+        if (groups.h2) {
+          end = new tc.now(tc.zone(firstZone))
+            .startOfDay()
+            .add(tc.hours(parseInt(groups.h2)))
+            .add(tc.minutes(parseInt(groups.m2) || 0));
+          if ((groups.p2 == "p" && end.hour() < 12) || start.hour() > end.hour())
+            end = end.add(tc.hours(12));
+        }
       }
 
       let duration = end ? end.diff(start).minutes() : undefined;
-      info = { zones: [], label, start, end, duration };
+      info = { zones: [], label, start, end, duration, live };
       zones.forEach((zone) => {
         var tzName = resolveZone(zone);
         if (zone.length) {
