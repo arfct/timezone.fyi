@@ -1,36 +1,18 @@
 /**
- * Tests for zone resolution — validates the overrides table in common.js
- * and confirms the airport map covers expected codes end-to-end.
+ * Tests for zone resolution: how a code in a URL (an abbreviation, airport,
+ * metro code or nickname) becomes a UTC offset or IANA zone.
  *
- * Note: common.js cannot be directly imported in Node tests because the
- * `tzdata` dependency uses JSON imports incompatible with Node ESM.
- * These tests validate the static override mappings by reading and parsing
- * common.js, and cross-reference against airport-map-data.json.
+ * Imports zone-lookup.js directly. common.js can't be imported in Node tests
+ * because the `tzdata` dependency uses JSON imports incompatible with Node ESM.
  *
  * Run with: npm test
  */
 
-import { readFileSync } from "fs";
-import { createRequire } from "module";
-import { fileURLToPath } from "url";
-import path from "path";
+import { resolveCodes } from "./zone-lookup.js";
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const _require = createRequire(import.meta.url);
-
-const airportMap = _require("./airport-map-data.json");
-
-// --- Extract overrides from common.js by parsing the static object ---
-// We read the file and eval just the overrides literal (no side effects).
-const commonSrc = readFileSync(path.join(__dirname, "common.js"), "utf8");
-const overridesMatch = commonSrc.match(/var overrides\s*=\s*(\{[\s\S]*?\n\});/);
-if (!overridesMatch) throw new Error("Could not parse overrides from common.js");
-const overrides = eval(`(${overridesMatch[1]})`); // eslint-disable-line no-eval
-
-// Simulate resolveZone: overrides first, then airportMap
-function resolveZone(z) {
-  const upper = z.toUpperCase();
-  return overrides[upper] ?? airportMap[upper];
+// Resolve `code` as it would appear among `context` codes in one URL
+function resolve(code, context = []) {
+  return resolveCodes([...context, code])[context.length];
 }
 
 // --- Minimal test harness ---
@@ -50,18 +32,15 @@ function expect(label, actual, expected) {
   }
 }
 
-function resolvesTo(label, zone, expectedTz) {
-  expect(label, resolveZone(zone), expectedTz);
+function resolvesTo(label, zone, expectedTz, context) {
+  expect(label, resolve(zone, context), expectedTz);
 }
 
 // --- Tests ---
 
-console.log("\nTimezone abbreviation overrides → numeric offsets");
-// EST/PST appear twice: once as a raw number, then overridden to an IANA string
-expect("EST is overridden to IANA string", typeof overrides["EST"], "string");
-expect("PST is overridden to IANA string", typeof overrides["PST"], "string");
-expect("GMT offset is 0",        overrides["GMT"], 0);
-expect("JST offset is 9",        overrides["JST"], 9);
+console.log("\nTimezone abbreviations → fixed UTC offsets (hours)");
+resolvesTo("GMT → 0", "GMT", 0);
+resolvesTo("JST → 9", "JST", 9);
 
 console.log("\nTimezone abbreviation overrides → IANA strings");
 resolvesTo("EST → America/New_York",    "EST",  "America/New_York");
@@ -99,11 +78,8 @@ console.log("\nColloquial aliases");
 resolvesTo("SF → America/Los_Angeles", "SF",  "America/Los_Angeles");
 resolvesTo("TOK → Asia/Tokyo",         "TOK", "Asia/Tokyo");
 
-console.log("\nOverrides take priority over airport map");
-// TCI in airport map is Asia/Vladivostok (Russian airport);
-// override must win and return Atlantic/Canary (Tenerife metro)
-expect("TCI override beats airport map",
-  overrides["TCI"] ?? airportMap["TCI"], "Atlantic/Canary");
+console.log("\nUnknown codes pass through unchanged");
+resolvesTo("Europe/London is left for tc.zone()", "Europe/London", "Europe/London");
 
 // --- Summary ---
 console.log(`\n${passed} passed, ${failed} failed`);
