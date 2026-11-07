@@ -1,6 +1,8 @@
 import airportMap from "./airport-map-data.json" with { type: "json" };
 
-var overrides = {
+// Zone abbreviations. A number is a fixed UTC offset in hours; a string is an
+// IANA zone.
+export const zoneAbbreviations = {
   ACDT: 10.5,
   ACST: 9.5,
   ACT: 8,
@@ -27,7 +29,6 @@ var overrides = {
   BTT: 6,
   CAT: 2,
   CCT: 6.5,
-  CDT: -5,
   CEDT: 2,
   CEST: 2,
   CET: 1,
@@ -43,8 +44,6 @@ var overrides = {
   CLT: -4,
   COST: -4,
   COT: -5,
-  CST: -6,
-  CT: 8,
   CVT: -1,
   CWST: 8.75,
   CXT: 7,
@@ -55,14 +54,12 @@ var overrides = {
   EAST: -6,
   EAT: 3,
   ECT: -5,
-  EDT: -4,
   EEDT: 3,
   EEST: 3,
   EET: 2,
   EGST: 0,
   EGT: -1,
   EIT: 9,
-  EST: -5,
   FET: 3,
   FJT: 12,
   FKST: -3,
@@ -94,13 +91,11 @@ var overrides = {
   KGT: 7,
   KOST: 11,
   KRAT: 7,
-  KST: 9,
   LHST: 11,
   LINT: 14,
   MAGT: 12,
   MART: -9.5,
   MAWT: 5,
-  MDT: -6,
   MEST: 2,
   MET: 1,
   MHT: 12,
@@ -108,7 +103,6 @@ var overrides = {
   MIT: -9.5,
   MMT: 6.5,
   MSK: 4,
-  MST: -7,
   MUT: 4,
   MVT: 5,
   MYT: 8,
@@ -133,7 +127,6 @@ var overrides = {
   PMDT: 8,
   PMST: 8,
   PONT: 11,
-  PST: 8,
   RET: 4,
   ROTT: -3,
   SAKT: 11,
@@ -174,9 +167,8 @@ var overrides = {
   WST: 8,
   YAKT: 9,
   YEKT: 5,
-  GMT: 0,
-  // Common timezone abbreviations that would otherwise resolve to wrong values
-  // (these take priority over any airport code with the same letters)
+  // People use these for the region's time all year (PST in July means
+  // Pacific time), so they map to a zone that follows daylight saving time
   EDT: "America/New_York",
   EST: "America/New_York",
   ET: "America/New_York",
@@ -190,6 +182,15 @@ var overrides = {
   KST: "Asia/Seoul",
   KDT: "Asia/Seoul",
   IST: "Asia/Kolkata",
+  UTC: "UTC",
+  WIB: "Asia/Jakarta",
+  WITA: "Asia/Makassar",
+  WIT: "Asia/Jayapura",
+};
+
+// Places that beat everything else: corrections to the airport data, and
+// nicknames that aren't IATA codes.
+const placeAliases = {
   // IATA metropolitan area codes not covered by airport-map-data.json
   // Most metro codes (NYC, LON, TYO, PAR, etc.) are now in the JSON via
   // lxndrblz/Airports citycodes.csv. Only keep overrides here for codes that
@@ -207,12 +208,53 @@ var overrides = {
   TOK: "Asia/Tokyo",           // Tokyo (IATA TOK = Torokina, PNG)
 };
 
+// Codes that are both a zone abbreviation and an airport or metro code, where
+// the abbreviation doesn't simply win. resolve-zone.test.js fails if an
+// abbreviation matches a major place (major-places.json) not listed here.
+//   zone:   the abbreviation wins
+//   place:  the airport or metro code wins
+//   either: both are plausible; the rest of the URL decides
+export const collisions = {
+  ACT: "place",  // Waco; ASEAN Common Time is rarely used
+  CIT: "place",  // Shymkent; CIT is an obsolete name for WITA
+  CLT: "place",  // Charlotte; Chile Time
+  GST: "zone",   // Gulf Standard Time; Gustavus, Alaska
+  HKT: "either", // Hong Kong Time or Phuket
+  ICT: "either", // Indochina Time or Wichita
+  IST: "either", // India Standard Time or Istanbul
+  MHT: "place",  // Manchester, NH (a medium airport); Marshall Islands Time
+  MST: "zone",   // Mountain Time; Maastricht
+};
+
+const gmtOffset = /^GMT[+-]\d+$/;
+
+// One code's reading, ignoring the rest of the URL: its value, and whether it
+// reads as a zone or a place. A two-sided code has neither until resolveCodes.
+function readCode(upper) {
+  const collision = collisions[upper];
+  if (collision === "either") return {};
+  if (upper in placeAliases) return { value: placeAliases[upper], kind: "place" };
+  if (upper in zoneAbbreviations && collision !== "place") {
+    return { value: zoneAbbreviations[upper], kind: "zone" };
+  }
+  if (upper in airportMap) return { value: airportMap[upper], kind: "place" };
+  if (gmtOffset.test(upper)) return { kind: "zone" };
+  return {};
+}
+
 // in: the zone codes from a URL, e.g. ["pst", "lhr"]
 // out: for each code, a UTC offset in hours (number), an IANA zone name,
 // or the code unchanged when nothing matches
 export function resolveCodes(codes) {
-  return codes.map((code) => {
-    const upper = code.toUpperCase();
-    return overrides[upper] ?? airportMap[upper] ?? code;
+  const uppers = codes.map((code) => code.toUpperCase());
+  const readings = uppers.map(readCode);
+  // Two-sided codes follow the first code that reads as a zone or a place
+  const preferPlace = readings.find((reading) => reading.kind)?.kind === "place";
+  return codes.map((code, i) => {
+    const upper = uppers[i];
+    if (collisions[upper] === "either") {
+      return preferPlace ? airportMap[upper] : zoneAbbreviations[upper];
+    }
+    return readings[i].value ?? code;
   });
 }
