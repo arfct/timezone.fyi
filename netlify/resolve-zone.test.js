@@ -113,6 +113,10 @@ resolvesTo("IST after SF nickname → Istanbul",   "IST", "Europe/Istanbul", ["s
 resolvesTo("IST after GMT+5 → India",            "IST", "Asia/Kolkata", ["gmt+5"]);
 resolvesTo("IST after HKT, LHR → Istanbul",      "IST", "Europe/Istanbul", ["hkt", "lhr"]);
 resolvesTo("IST after HKT only → India",         "IST", "Asia/Kolkata", ["hkt"]);
+expect("IST between PST and LHR → India (first wins)",  resolveCodes(["pst", "ist", "lhr"])[1], "Asia/Kolkata");
+expect("IST between GMT+5 and LHR → India",             resolveCodes(["gmt+5", "ist", "lhr"])[1], "Asia/Kolkata");
+expect("IST after IANA name, LHR → Istanbul (IANA gives no signal)",
+  resolveCodes(["Europe/London", "ist", "lhr"])[1], "Europe/Istanbul");
 resolvesTo("HKT alone → 8, Hong Kong Time",      "HKT", 8);
 resolvesTo("HKT after SFO → Phuket",             "HKT", "Asia/Bangkok", ["sfo"]);
 resolvesTo("ICT after PST → 7, Indochina Time",  "ICT", 7, ["pst"]);

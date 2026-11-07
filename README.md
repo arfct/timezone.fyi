@@ -26,7 +26,7 @@ Accepted zone formats:
 - Airport codes: `JFK`, `LHR`, `NRT`, `DXB` (~9,800 airports)
 - Metro area codes: `NYC`, `LON`, `TYO`, `PAR`, `CHI` ([full list](https://en.wikipedia.org/wiki/List_of_airports_by_IATA_metropolitan_area_code))
 
-Many zone abbreviations are also airport codes. The abbreviation wins, except that large airports and metro codes beat rarely used abbreviations: `CLT` is Charlotte, not Chile Time. A few codes are plausible either way (`IST`, `HKT`, `ICT`), so the first other code in the URL decides: `/10am,pst,ist` is India and `/10am,lhr,ist` is Istanbul. The full list is `collisions` in `netlify/zone-lookup.js`.
+Many zone abbreviations are also airport codes. The abbreviation wins, except that large airports and metro codes beat rarely used abbreviations: `CLT` is Charlotte, not Chile Time. A few codes are plausible either way (`IST`, `HKT`, `ICT`). For these, the first other code that's a zone abbreviation or a place decides: `/10am,pst,ist` is India and `/10am,lhr,ist` is Istanbul. The full list, including hand-picked exceptions such as `MHT` (Manchester, NH), is `collisions` in `netlify/zone-lookup.js`.
 
 The page also generates a `.ics` calendar file download for the time.
 
@@ -41,7 +41,7 @@ netlify/
   common.js      → timezone parsing and calculation logic
   zone-lookup.js → turns zone codes into offsets or IANA zones (abbreviations, aliases, airports)
   airport-map-data.json  → precomputed IATA → IANA timezone map (~9,800 airports + metro codes)
-  major-places.json      → large airports and metro codes, which beat rare zone abbreviations
+  major-places.json      → large airports and metro codes; tests use it to check every collision is classified
 scripts/
   build-airport-map.mjs  → regenerates airport-map-data.json and major-places.json
 ```
