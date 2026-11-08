@@ -1,6 +1,7 @@
 import * as tc from "timezonecomplete";
 import tzdata from "tzdata";
 import { resolveCodes } from "./zone-lookup.js";
+import { dayOffset as getDayOffset, formatDayOffset } from "./day-offset.js";
 
 // Use the top-level tzdata package, which Dependabot keeps current, instead of
 // the older copy that timezonecomplete pins and would load on its own.
@@ -180,7 +181,7 @@ export const getZoneInfo = (path) => {
           var tcz = tc.zone(tzName);
 
           var zoneStart = start.toZone(tcz);
-          var extraDay = start.day() < zoneStart.day();
+          var dayOffset = getDayOffset(start, zoneStart);
 
           let omitXM = false;
           var endString = "";
@@ -208,9 +209,10 @@ export const getZoneInfo = (path) => {
             .replace(/_/g, " ")
             .toUpperCase();
 
+          var dayMarker = formatDayOffset(dayOffset);
           var description = `${startString}${
             endString ? "‑" + endString : ""
-          } ${niceZoneName} ${extraDay ? " +1" : ""}`;
+          } ${niceZoneName}${dayMarker ? " " + dayMarker : ""}`;
           var night =
             zoneStart.hour() > 14 || zoneStart.hour() <= 6 ? "night" : "";
           var zoneInfo = {
@@ -222,7 +224,7 @@ export const getZoneInfo = (path) => {
             niceZoneName,
             startString,
             endString,
-            extraDay,
+            dayOffset,
           };
           info.zones.push(zoneInfo);
         }

@@ -1,5 +1,6 @@
 import * as tc from "timezonecomplete";
 import { getZoneInfo } from "../common.js";
+import { superscriptDayOffset } from "../day-offset.js";
 
 export default async (req, context) => {
   let url = new URL(req.url);
@@ -23,7 +24,7 @@ export default async (req, context) => {
           <div class="nicezone">${z.niceZoneName}</div>
           <div class="actualzone">${z.zoneStart.zone().name()}</div>
         </div>
-        <div class="time">${z.startString}${z.extraDay ? "⁺¹" : ""}${
+        <div class="time">${z.startString}${superscriptDayOffset(z.dayOffset)}${
         z.endString ? `<div class="dash">–</div>` : ""
       }${z.endString}</div>
         
