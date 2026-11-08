@@ -4,9 +4,12 @@
  * Sources (lxndrblz/Airports — fetched from GitHub at build time):
  *   airports.csv  — all IATA airports with IANA timezone + city_code
  *   citycodes.csv — metropolitan area codes with IANA timezone
+ * OurAirports airports.csv — airport size (`type`), for major-places.json
  *
  * Writes a compact code → timezone map covering all IATA airport codes
- * plus metropolitan area codes (e.g. NYC, LON, TYO).
+ * plus metropolitan area codes (e.g. NYC, LON, TYO), and major-places.json:
+ * the large airports and metro codes that a rare zone abbreviation yields to
+ * (see zone-lookup.js).
  *
  * Usage:
  *   npm run build:airports
@@ -64,6 +67,8 @@ const AIRPORTS_URL =
   "https://raw.githubusercontent.com/lxndrblz/Airports/refs/heads/main/airports.csv";
 const CITYCODES_URL =
   "https://raw.githubusercontent.com/lxndrblz/Airports/refs/heads/main/citycodes.csv";
+const OURAIRPORTS_URL =
+  "https://davidmegginson.github.io/ourairports-data/airports.csv";
 
 // Normalize legacy/alias timezone names to canonical IANA names
 const TZ_NORMALIZE = {
@@ -112,10 +117,11 @@ async function fetchCSV(url) {
 
 // --- Fetch sources ---
 
-console.log("Fetching airports.csv and citycodes.csv from lxndrblz/Airports...");
-const [airportsText, citycodesText] = await Promise.all([
+console.log("Fetching lxndrblz/Airports and OurAirports data...");
+const [airportsText, citycodesText, ourAirportsText] = await Promise.all([
   fetchCSV(AIRPORTS_URL),
   fetchCSV(CITYCODES_URL),
+  fetchCSV(OURAIRPORTS_URL),
 ]);
 
 const airports = parseCSV(airportsText);
@@ -134,12 +140,14 @@ for (const row of airports) {
 }
 
 // 2. Metropolitan area codes from citycodes.csv (explicit — takes precedence)
+const metroCodes = new Set();
 let cityCodeCount = 0;
 for (const row of citycodes) {
   const code = row.code;
   const tz = normalizeTz(row.time_zone);
   if (!code || !tz) continue;
   airportMap[code] = tz;
+  metroCodes.add(code);
   cityCodeCount++;
 }
 
@@ -150,6 +158,7 @@ for (const row of airports) {
   const cityCode = row.city_code;
   const tz = normalizeTz(row.time_zone);
   if (!cityCode || !tz || cityCode === row.code) continue;
+  metroCodes.add(cityCode);
   if (!cityTzVotes[cityCode]) cityTzVotes[cityCode] = {};
   cityTzVotes[cityCode][tz] = (cityTzVotes[cityCode][tz] ?? 0) + 1;
 }
@@ -169,8 +178,19 @@ const sorted = Object.fromEntries(
 const outPath = new URL("../netlify/airport-map-data.json", import.meta.url);
 writeFileSync(outPath, JSON.stringify(sorted, null, 2) + "\n");
 
+// 4. Major places: large airports (by OurAirports size) and metro codes
+const largeAirports = parseCSV(ourAirportsText)
+  .filter(row => row.type === "large_airport" && row.iata_code)
+  .map(row => row.iata_code);
+const majorPlaces = [...new Set([...largeAirports, ...metroCodes])]
+  .filter(code => sorted[code])
+  .sort();
+const majorPath = new URL("../netlify/major-places.json", import.meta.url);
+writeFileSync(majorPath, JSON.stringify(majorPlaces) + "\n");
+
 console.log(`Airport codes:                ${airportCount}`);
 console.log(`Metro codes (citycodes.csv):  ${cityCodeCount}`);
 console.log(`Metro codes (derived):        ${derivedCount}`);
 console.log(`Total entries:                ${Object.keys(sorted).length}`);
-console.log(`Written to netlify/airport-map-data.json`);
+console.log(`Major places:                 ${majorPlaces.length}`);
+console.log(`Written to netlify/airport-map-data.json and netlify/major-places.json`);

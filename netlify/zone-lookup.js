@@ -1,0 +1,260 @@
+import airportMap from "./airport-map-data.json" with { type: "json" };
+
+// Zone abbreviations. A number is a fixed UTC offset in hours; a string is an
+// IANA zone.
+export const zoneAbbreviations = {
+  ACDT: 10.5,
+  ACST: 9.5,
+  ACT: 8,
+  ADT: -3,
+  AEDT: 11,
+  AEST: 10,
+  AFT: 4.5,
+  AKDT: -8,
+  AKST: -9,
+  AMST: 5,
+  AMT: 4,
+  ART: -3,
+  AST: -4,
+  AWDT: 9,
+  AWST: 8,
+  AZOST: -1,
+  AZT: 4,
+  BDT: 8,
+  BIOT: 6,
+  BIT: -12,
+  BOT: -4,
+  BRT: -3,
+  BST: 1,
+  BTT: 6,
+  CAT: 2,
+  CCT: 6.5,
+  CEDT: 2,
+  CEST: 2,
+  CET: 1,
+  CHADT: 13.75,
+  CHAST: 12.75,
+  CHOT: -8,
+  CHST: 10,
+  CHUT: 10,
+  CIST: -8,
+  CIT: 8,
+  CKT: -10,
+  CLST: -3,
+  CLT: -4,
+  COST: -4,
+  COT: -5,
+  CVT: -1,
+  CWST: 8.75,
+  CXT: 7,
+  DAVT: 7,
+  DDUT: 7,
+  DFT: 1,
+  EASST: -5,
+  EAST: -6,
+  EAT: 3,
+  ECT: -5,
+  EEDT: 3,
+  EEST: 3,
+  EET: 2,
+  EGST: 0,
+  EGT: -1,
+  EIT: 9,
+  FET: 3,
+  FJT: 12,
+  FKST: -3,
+  FKT: -4,
+  FNT: -2,
+  GALT: -6,
+  GAMT: -9,
+  GET: 4,
+  GFT: -3,
+  GILT: 12,
+  GIT: -9,
+  GMT: 0,
+  GST: 4,
+  GYT: -4,
+  HADT: -9,
+  HAEC: 2,
+  HAST: -10,
+  HKT: 8,
+  HMT: 5,
+  HOVT: 7,
+  HST: -10,
+  ICT: 7,
+  IDT: 3,
+  IOT: 3,
+  IRDT: 8,
+  IRKT: 8,
+  IRST: 3.5,
+  JST: 9,
+  KGT: 7,
+  KOST: 11,
+  KRAT: 7,
+  LHST: 11,
+  LINT: 14,
+  MAGT: 12,
+  MART: -9.5,
+  MAWT: 5,
+  MEST: 2,
+  MET: 1,
+  MHT: 12,
+  MIST: 11,
+  MIT: -9.5,
+  MMT: 6.5,
+  MSK: 4,
+  MUT: 4,
+  MVT: 5,
+  MYT: 8,
+  NCT: 11,
+  NDT: -2.5,
+  NFT: 11.5,
+  NPT: 5.75,
+  NST: -3.5,
+  NT: -3.5,
+  NUT: -11.5,
+  NZDT: 13,
+  NZST: 12,
+  OMST: 6,
+  ORAT: -5,
+  PDT: -7,
+  PET: -5,
+  PETT: 12,
+  PGT: 10,
+  PHOT: 13,
+  PHT: 8,
+  PKT: 5,
+  PMDT: 8,
+  PMST: 8,
+  PONT: 11,
+  RET: 4,
+  ROTT: -3,
+  SAKT: 11,
+  SAMT: 4,
+  SAST: 2,
+  SBT: 11,
+  SCT: 4,
+  SGT: 8,
+  SLT: 5.5,
+  SRT: -3,
+  SST: -11,
+  SYOT: 3,
+  TAHT: -10,
+  TFT: 5,
+  THA: 7,
+  TJT: 5,
+  TKT: 14,
+  TLT: 9,
+  TMT: 5,
+  TOT: 13,
+  TVT: 12,
+  UCT: 0,
+  ULAT: 8,
+  UYST: -2,
+  UYT: -3,
+  UZT: 5,
+  VET: -4.5,
+  VLAT: 10,
+  VOLT: 4,
+  VOST: 6,
+  VUT: 11,
+  WAKT: 12,
+  WAST: 2,
+  WAT: 1,
+  WEDT: 1,
+  WEST: 1,
+  WET: 0,
+  WST: 8,
+  YAKT: 9,
+  YEKT: 5,
+  // People use these for the region's time all year (PST in July means
+  // Pacific time), so they map to a zone that follows daylight saving time
+  EDT: "America/New_York",
+  EST: "America/New_York",
+  ET: "America/New_York",
+  CT: "America/Chicago",
+  CDT: "America/Chicago",
+  CST: "America/Chicago",
+  MDT: "America/Denver",
+  MST: "America/Denver",
+  PST: "America/Los_Angeles",
+  PT: "America/Los_Angeles",
+  KST: "Asia/Seoul",
+  KDT: "Asia/Seoul",
+  IST: "Asia/Kolkata",
+  UTC: "UTC",
+  WIB: "Asia/Jakarta",
+  WITA: "Asia/Makassar",
+  WIT: "Asia/Jayapura",
+};
+
+// Places that beat everything else: corrections to the airport data, and
+// nicknames that aren't IATA codes.
+const placeAliases = {
+  // IATA metropolitan area codes not covered by airport-map-data.json
+  // Most metro codes (NYC, LON, TYO, PAR, etc.) are now in the JSON via
+  // lxndrblz/Airports citycodes.csv. Only keep overrides here for codes that
+  // are absent or incorrect in that dataset.
+  TCI: "Atlantic/Canary",   // Tenerife — lxndrblz maps TCI to a Russian airport
+  QDF: "America/Chicago",   // Dallas/Fort Worth — not in lxndrblz
+  QHO: "America/Chicago",   // Houston — not in lxndrblz
+  QMI: "America/New_York",  // Miami — not in lxndrblz
+
+  // City/colloquial aliases that are not IATA airport codes
+  SF: "America/Los_Angeles",
+  MTV: "America/Los_Angeles",  // Mountain View
+  MPO: "America/Los_Angeles",  // Menlo Park Office
+  CAM: "America/New_York",     // Cambridge
+  TOK: "Asia/Tokyo",           // Tokyo (IATA TOK = Torokina, PNG)
+};
+
+// Codes that are both a zone abbreviation and an airport or metro code, where
+// the abbreviation doesn't simply win. resolve-zone.test.js fails if an
+// abbreviation matches a major place (major-places.json) not listed here.
+//   zone:   the abbreviation wins
+//   place:  the airport or metro code wins
+//   either: both are plausible; the rest of the URL decides
+export const collisions = {
+  ACT: "place",  // Waco; ASEAN Common Time is rarely used
+  CIT: "place",  // Shymkent; CIT is an obsolete name for WITA
+  CLT: "place",  // Charlotte; Chile Time
+  GST: "zone",   // Gulf Standard Time; Gustavus, Alaska
+  HKT: "either", // Hong Kong Time or Phuket
+  ICT: "either", // Indochina Time or Wichita
+  IST: "either", // India Standard Time or Istanbul
+  MHT: "place",  // Manchester, NH (a medium airport); Marshall Islands Time
+  MST: "zone",   // Mountain Time; Maastricht
+};
+
+const gmtOffset = /^GMT[+-]\d+$/;
+
+// One code's reading, ignoring the rest of the URL: its value, and whether it
+// reads as a zone or a place. A two-sided code has neither until resolveCodes.
+function readCode(upper) {
+  const collision = collisions[upper];
+  if (collision === "either") return {};
+  if (upper in placeAliases) return { value: placeAliases[upper], kind: "place" };
+  if (upper in zoneAbbreviations && collision !== "place") {
+    return { value: zoneAbbreviations[upper], kind: "zone" };
+  }
+  if (upper in airportMap) return { value: airportMap[upper], kind: "place" };
+  if (gmtOffset.test(upper)) return { kind: "zone" };
+  return {};
+}
+
+// in: the zone codes from a URL, e.g. ["pst", "lhr"]
+// out: for each code, a UTC offset in hours (number), an IANA zone name,
+// or the code unchanged when nothing matches
+export function resolveCodes(codes) {
+  const uppers = codes.map((code) => code.toUpperCase());
+  const readings = uppers.map(readCode);
+  // Two-sided codes follow the first code that reads as a zone or a place
+  const preferPlace = readings.find((reading) => reading.kind)?.kind === "place";
+  return codes.map((code, i) => {
+    const upper = uppers[i];
+    if (collisions[upper] === "either") {
+      return preferPlace ? airportMap[upper] : zoneAbbreviations[upper];
+    }
+    return readings[i].value ?? code;
+  });
+}

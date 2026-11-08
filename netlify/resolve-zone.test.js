@@ -1,36 +1,23 @@
 /**
- * Tests for zone resolution — validates the overrides table in common.js
- * and confirms the airport map covers expected codes end-to-end.
+ * Tests for zone resolution: how a code in a URL (an abbreviation, airport,
+ * metro code or nickname) becomes a UTC offset or IANA zone.
  *
- * Note: common.js cannot be directly imported in Node tests because the
- * `tzdata` dependency uses JSON imports incompatible with Node ESM.
- * These tests validate the static override mappings by reading and parsing
- * common.js, and cross-reference against airport-map-data.json.
+ * Imports zone-lookup.js directly. common.js can't be imported in Node tests
+ * because the `tzdata` dependency uses JSON imports incompatible with Node ESM.
  *
  * Run with: npm test
  */
 
-import { readFileSync } from "fs";
-import { createRequire } from "module";
-import { fileURLToPath } from "url";
-import path from "path";
+import * as lookup from "./zone-lookup.js";
+import airportMap from "./airport-map-data.json" with { type: "json" };
+import majorPlaceList from "./major-places.json" with { type: "json" };
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const _require = createRequire(import.meta.url);
+const { resolveCodes } = lookup;
+const majorPlaces = new Set(majorPlaceList);
 
-const airportMap = _require("./airport-map-data.json");
-
-// --- Extract overrides from common.js by parsing the static object ---
-// We read the file and eval just the overrides literal (no side effects).
-const commonSrc = readFileSync(path.join(__dirname, "common.js"), "utf8");
-const overridesMatch = commonSrc.match(/var overrides\s*=\s*(\{[\s\S]*?\n\});/);
-if (!overridesMatch) throw new Error("Could not parse overrides from common.js");
-const overrides = eval(`(${overridesMatch[1]})`); // eslint-disable-line no-eval
-
-// Simulate resolveZone: overrides first, then airportMap
-function resolveZone(z) {
-  const upper = z.toUpperCase();
-  return overrides[upper] ?? airportMap[upper];
+// Resolve `code` as it would appear among `context` codes in one URL
+function resolve(code, context = []) {
+  return resolveCodes([...context, code])[context.length];
 }
 
 // --- Minimal test harness ---
@@ -50,18 +37,15 @@ function expect(label, actual, expected) {
   }
 }
 
-function resolvesTo(label, zone, expectedTz) {
-  expect(label, resolveZone(zone), expectedTz);
+function resolvesTo(label, zone, expectedTz, context) {
+  expect(label, resolve(zone, context), expectedTz);
 }
 
 // --- Tests ---
 
-console.log("\nTimezone abbreviation overrides → numeric offsets");
-// EST/PST appear twice: once as a raw number, then overridden to an IANA string
-expect("EST is overridden to IANA string", typeof overrides["EST"], "string");
-expect("PST is overridden to IANA string", typeof overrides["PST"], "string");
-expect("GMT offset is 0",        overrides["GMT"], 0);
-expect("JST offset is 9",        overrides["JST"], 9);
+console.log("\nTimezone abbreviations → fixed UTC offsets (hours)");
+resolvesTo("GMT → 0", "GMT", 0);
+resolvesTo("JST → 9", "JST", 9);
 
 console.log("\nTimezone abbreviation overrides → IANA strings");
 resolvesTo("EST → America/New_York",    "EST",  "America/New_York");
@@ -99,11 +83,57 @@ console.log("\nColloquial aliases");
 resolvesTo("SF → America/Los_Angeles", "SF",  "America/Los_Angeles");
 resolvesTo("TOK → Asia/Tokyo",         "TOK", "Asia/Tokyo");
 
-console.log("\nOverrides take priority over airport map");
-// TCI in airport map is Asia/Vladivostok (Russian airport);
-// override must win and return Atlantic/Canary (Tenerife metro)
-expect("TCI override beats airport map",
-  overrides["TCI"] ?? airportMap["TCI"], "Atlantic/Canary");
+console.log("\nUnknown codes pass through unchanged");
+resolvesTo("Europe/London is left for tc.zone()", "Europe/London", "Europe/London");
+
+console.log("\nZone abbreviations beat minor airports");
+resolvesTo("UTC → UTC (not Soesterberg AB)",        "UTC",  "UTC");
+resolvesTo("WIB → Asia/Jakarta (not Wilbarger Co)", "WIB",  "Asia/Jakarta");
+resolvesTo("WITA → Asia/Makassar",                  "WITA", "Asia/Makassar");
+resolvesTo("WIT → Asia/Jayapura (not Wittenoom)",   "WIT",  "Asia/Jayapura");
+
+console.log("\nCommon abbreviations beat major places");
+resolvesTo("MST → America/Denver (not Maastricht)", "MST", "America/Denver");
+resolvesTo("GST → 4, Gulf Standard Time (not Gustavus)", "GST", 4);
+
+console.log("\nMajor places beat rare abbreviations");
+resolvesTo("CLT → Charlotte (not Chile Time)",       "CLT", "America/New_York");
+resolvesTo("ACT → Waco (not ASEAN Common Time)",     "ACT", "America/Chicago");
+resolvesTo("CIT → Shymkent (not obsolete CIT)",      "CIT", "Asia/Almaty");
+resolvesTo("MHT → Manchester, NH (not Marshall Is.)", "MHT", "America/New_York");
+
+console.log("\nTwo-sided codes: the first other code decides");
+resolvesTo("IST alone → India",                  "IST", "Asia/Kolkata");
+resolvesTo("IST after PST → India",              "IST", "Asia/Kolkata", ["pst"]);
+resolvesTo("IST after LHR → Istanbul",           "IST", "Europe/Istanbul", ["lhr"]);
+expect("IST before SFO → Istanbul",              resolveCodes(["ist", "sfo"])[0], "Europe/Istanbul");
+resolvesTo("IST after MST → India",              "IST", "Asia/Kolkata", ["mst"]);
+resolvesTo("IST after CLT (Charlotte) → Istanbul", "IST", "Europe/Istanbul", ["clt"]);
+resolvesTo("IST after SF nickname → Istanbul",   "IST", "Europe/Istanbul", ["sf"]);
+resolvesTo("IST after GMT+5 → India",            "IST", "Asia/Kolkata", ["gmt+5"]);
+resolvesTo("IST after HKT, LHR → Istanbul",      "IST", "Europe/Istanbul", ["hkt", "lhr"]);
+resolvesTo("IST after HKT only → India",         "IST", "Asia/Kolkata", ["hkt"]);
+expect("IST between PST and LHR → India (first wins)",  resolveCodes(["pst", "ist", "lhr"])[1], "Asia/Kolkata");
+expect("IST between GMT+5 and LHR → India",             resolveCodes(["gmt+5", "ist", "lhr"])[1], "Asia/Kolkata");
+expect("IST after IANA name, LHR → Istanbul (IANA gives no signal)",
+  resolveCodes(["Europe/London", "ist", "lhr"])[1], "Europe/Istanbul");
+resolvesTo("HKT alone → 8, Hong Kong Time",      "HKT", 8);
+resolvesTo("HKT after SFO → Phuket",             "HKT", "Asia/Bangkok", ["sfo"]);
+resolvesTo("ICT after PST → 7, Indochina Time",  "ICT", 7, ["pst"]);
+resolvesTo("ICT after JFK → Wichita",            "ICT", "America/Chicago", ["jfk"]);
+resolvesTo("Lowercase ist after lhr → Istanbul", "ist", "Europe/Istanbul", ["lhr"]);
+
+console.log("\nEvery abbreviation that is also a major place is classified");
+const zoneAbbreviations = lookup.zoneAbbreviations ?? {};
+const collisions = lookup.collisions ?? {};
+expect("zone-lookup.js exports zoneAbbreviations", typeof lookup.zoneAbbreviations, "object");
+expect("zone-lookup.js exports collisions",        typeof lookup.collisions, "object");
+const unclassified = Object.keys(zoneAbbreviations)
+  .filter((code) => majorPlaces.has(code) && !(code in collisions));
+expect("no unclassified collisions (add them to `collisions`)", unclassified.join(", "), "");
+const stale = Object.keys(collisions)
+  .filter((code) => !(code in zoneAbbreviations) || !(code in airportMap));
+expect("no stale `collisions` entries", stale.join(", "), "");
 
 // --- Summary ---
 console.log(`\n${passed} passed, ${failed} failed`);
