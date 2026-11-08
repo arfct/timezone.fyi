@@ -17,6 +17,8 @@ https://timezone.fyi/now,cst,pst
 - **Remaining segments** — timezone codes, separated by commas or periods
 - **Optional label** — prefix the time with `label/` to name the event
 
+A range can cross midnight: `10pm-1am` ends the next day. A start without am/pm takes the end's, so `1-2pm` is 1pm–2pm. An end without am/pm is the next time the clock shows it after the start, so `10-2` is 10am–2pm. A time on a different day from the first zone's start gets a marker: ⁺¹ for the next day, ⁻¹ for the day before.
+
 Accepted zone formats:
 
 - Timezone abbreviations: `PST`, `EST`, `GMT`, `UTC`, `IST`
@@ -40,7 +42,9 @@ netlify/
     og.js        → Open Graph image generation
   common.js      → timezone parsing and calculation logic
   zone-lookup.js → turns zone codes into offsets or IANA zones (abbreviations, aliases, airports)
+  parse-time.js  → reads the time or range in a URL (10pm-1am, 1-2pm) as times today
   day-offset.js  → the +1/−1 day marker beside each time
+  escape.js      → escapes text from the URL for the page and the calendar file
   airport-map-data.json  → precomputed IATA → IANA timezone map (~9,800 airports + metro codes)
   major-places.json      → large airports and metro codes; tests use it to check every collision is classified
 scripts/
