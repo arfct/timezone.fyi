@@ -44,6 +44,7 @@ netlify/
   zone-lookup.js → turns zone codes into offsets or IANA zones (abbreviations, aliases, airports)
   parse-time.js  → reads the time or range in a URL (10pm-1am, 1-2pm) as times today
   day-offset.js  → the +1/−1 day marker beside each time
+  escape.js      → escapes text from the URL for the page and the calendar file
   airport-map-data.json  → precomputed IATA → IANA timezone map (~9,800 airports + metro codes)
   major-places.json      → large airports and metro codes; tests use it to check every collision is classified
 scripts/

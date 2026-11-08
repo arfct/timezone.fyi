@@ -1,6 +1,7 @@
 import * as tc from "timezonecomplete";
 import { getZoneInfo } from "../common.js";
 import { superscriptDayOffset } from "../day-offset.js";
+import { escapeHtml, escapeIcsText } from "../escape.js";
 
 export default async (req, context) => {
   let url = new URL(req.url);
@@ -21,8 +22,8 @@ export default async (req, context) => {
       <div class="zone ${z.night} g${z.zoneStart.hour()}">
         <div class="emoji">${z.emoji}</div>
         <div class="timezone">
-          <div class="nicezone">${z.niceZoneName}</div>
-          <div class="actualzone">${z.zoneStart.zone().name()}</div>
+          <div class="nicezone">${escapeHtml(z.niceZoneName)}</div>
+          <div class="actualzone">${escapeHtml(z.zoneStart.zone().name())}</div>
         </div>
         <div class="time">${z.startString}${superscriptDayOffset(z.dayOffset)}${
         z.endString ? `<div class="dash">–</div>` : ""
@@ -50,9 +51,9 @@ export default async (req, context) => {
 VERSION:2.0
 PRODID:-//hacksw/handcal//NONSGML v1.0//EN
 BEGIN:VEVENT
-SUMMARY:${info.label || defaultName}
-LOCATION:${url.toString()}
-DESCRIPTION:${description}
+SUMMARY:${escapeIcsText(info.label || defaultName)}
+LOCATION:${escapeIcsText(url.toString())}
+DESCRIPTION:${escapeIcsText(description)}
 ${dtstart}
 DURATION:${duration}
 END:VEVENT
@@ -66,16 +67,16 @@ END:VCALENDAR`
 
     return new Response(
       `<!doctype html>
-      <!--${JSON.stringify(info)}-->
+      <!--${escapeHtml(JSON.stringify(info))}-->
       <head>
         <link rel="stylesheet" type="text/css" href="/index.css">
-        <title>${info.label || description}</title>
+        <title>${escapeHtml(info.label || description)}</title>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no" />
-        <meta property="og:title" content="${description}">
-        <meta property="og:description" content="${
+        <meta property="og:title" content="${escapeHtml(description)}">
+        <meta property="og:description" content="${escapeHtml(
           info.label || "timezone.fyi"
-        }">
+        )}">
         ${
           info.zones
             ? `<meta property="og:image" content="/og?path=${encodeURIComponent(path)}">`
@@ -90,17 +91,17 @@ END:VCALENDAR`
         <div id="cal-modal-backdrop"></div>
         <button id="cal-modal-close" aria-label="Close">✕</button>
         <div id="cal-modal-content">
-          <a class="cal-option" id="cal-opt-gcal" href="${gcalUrl}" target="_blank" rel="noopener noreferrer">
+          <a class="cal-option" id="cal-opt-gcal" href="${escapeHtml(gcalUrl)}" target="_blank" rel="noopener noreferrer">
             <span class="cal-option-icon"><img src="https://upload.wikimedia.org/wikipedia/commons/a/a5/Google_Calendar_icon_%282020%29.svg" width="48" height="48" alt="Google Calendar"></span>
             <span>Google Calendar</span>
           </a>
-          <a class="cal-option" id="cal-opt-ics" download="${info.label || defaultName}.ics" href="data:text/calendar;charset=utf8,${vcalendar}">
+          <a class="cal-option" id="cal-opt-ics" download="${escapeHtml(info.label || defaultName)}.ics" href="data:text/calendar;charset=utf8,${vcalendar}">
             <span class="cal-option-icon">📅</span>
             <span>ICS File</span>
           </a>
         </div>
       </div>`}
-      <div id="header"><span>${info.label || ""}</span></div>
+      <div id="header"><span>${escapeHtml(info.label || "")}</span></div>
       <div id="zones">${zoneHTML.join("")}</div>
       </body>
     </html>`,
@@ -131,7 +132,7 @@ END:VCALENDAR`
 
     <br>When you send these via Slack, SMS, and other modern chat clients,
     <br>they'll expand to show times in every listed zone.
-    <div class="error">${info && info.error ? info.error : ""}</div>
+    <div class="error">${info && info.error ? escapeHtml(info.error) : ""}</div>
     </div>
     </body>
     </html>`,

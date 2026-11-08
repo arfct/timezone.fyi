@@ -71,6 +71,8 @@ expect("1030-1130", times("1030-1130"), "2026-11-09 10:30 → 2026-11-09 11:30")
 expect("130pm-3", times("130pm-3"), "2026-11-09 13:30 → 2026-11-09 15:00");
 expect("uppercase 10:30PM", times("10:30PM"), "2026-11-09 22:30");
 expect("uppercase 10PM-1AM", times("10PM-1AM"), "2026-11-09 22:00 → 2026-11-10 01:00");
+expect("a colon without minutes: 10:pm", times("10:pm"), "2026-11-09 22:00");
+expect("a colon without minutes: 10-11:pm", times("10-11:pm"), "2026-11-09 22:00 → 2026-11-09 23:00");
 
 console.log("\n24-hour times: 0, a leading zero, 13-23, or h");
 expect("0-2pm starts at midnight", times("0-2pm"), "2026-11-09 00:00 → 2026-11-09 14:00");
@@ -113,6 +115,7 @@ expect("10pm on the day DST ends", times("10pm", day(2026, 11, 1)), "2026-11-01 
 expect("10pm on the day DST starts", times("10pm", day(2026, 3, 8)), "2026-03-08 22:00");
 expect("10pm-1am on the day DST ends", times("10pm-1am", day(2026, 11, 1)), "2026-11-01 22:00 → 2026-11-02 01:00");
 expect("2-3am in the hour DST skips keeps its length", times("2-3am", day(2026, 3, 8)), "2026-03-08 03:00 → 2026-03-08 04:00");
+expect("2:30-3:45am starting in the skipped hour keeps its length", times("2:30-3:45am", day(2026, 3, 8)), "2026-03-08 03:30 → 2026-03-08 04:45");
 
 // --- Summary ---
 console.log(`\n${passed} passed, ${failed} failed`);

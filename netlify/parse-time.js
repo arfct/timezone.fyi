@@ -3,11 +3,11 @@
 import * as tc from "timezonecomplete";
 
 // An optional "label/", then a time and an optional end time. Each time is
-// 1–4 digits ("9", "930", "1030"), optional ":30" or "h30" minutes, and an
-// optional am/pm, or "h" for 24-hour time ("10h").
+// 1–4 digits ("9", "930", "1030"), optional ":30" or "h30" minutes (or a bare
+// colon, "10:pm"), and an optional am/pm, or "h" for 24-hour time ("10h").
 // Handle difference in params[0] on local vs server (firebase) looking at leading slash
 const TIME_RE =
-  /\/?(?<label>[^\/]+\/)?(?<t1>\d{1,4})(?:(?<s1>[:h])(?<m1>\d\d))?(?<p1>[aph])?m?-?(?:(?<t2>\d{1,4})(?:(?<s2>[:h])(?<m2>\d\d))?(?<p2>[aph])?m?)?/i;
+  /\/?(?<label>[^\/]+\/)?(?<t1>\d{1,4})(?:(?<s1>[:h])(?<m1>\d\d)|:)?(?<p1>[aph])?m?-?(?:(?<t2>\d{1,4})(?:(?<s2>[:h])(?<m2>\d\d)|:)?(?<p2>[aph])?m?)?/i;
 
 const HALF_DAY = 12 * 60;
 const DAY = 24 * 60;
@@ -102,11 +102,12 @@ export function parseTime(timeString, today) {
   }
 
   const startTime = onDay(today, start);
-  let endTime = end === undefined ? undefined : onDay(today, end);
-  // In the hour skipped when clocks spring forward, both ends can land on
-  // the same instant; keep the range as long as written.
-  if (endTime && endTime.lessEqual(startTime))
-    endTime = startTime.add(tc.minutes(end - start));
+  // A start in the hour skipped when clocks spring forward moves later; the
+  // end then follows it so the range keeps its written length.
+  const startMoved = startTime.hour() * 60 + startTime.minute() != start % DAY;
+  let endTime;
+  if (end !== undefined)
+    endTime = startMoved ? startTime.add(tc.minutes(end - start)) : onDay(today, end);
 
   return {
     label: label ? decodePrettyComponent(label.slice(0, -1)) : undefined,
