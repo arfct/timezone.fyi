@@ -8,12 +8,14 @@
  * Run with: npm test
  */
 
+import { createRequire } from "module";
 import * as lookup from "./zone-lookup.js";
 import airportMap from "./airport-map-data.json" with { type: "json" };
 import majorPlaceList from "./major-places.json" with { type: "json" };
 
 const { resolveCodes } = lookup;
 const majorPlaces = new Set(majorPlaceList);
+const tzdb = createRequire(import.meta.url)("timezonecomplete").TzDatabase.instance();
 
 // Resolve `code` as it would appear among `context` codes in one URL
 function resolve(code, context = []) {
@@ -94,7 +96,7 @@ resolvesTo("WIT → Asia/Jayapura (not Wittenoom)",   "WIT",  "Asia/Jayapura");
 
 console.log("\nCommon abbreviations beat major places");
 resolvesTo("MST → America/Denver (not Maastricht)", "MST", "America/Denver");
-resolvesTo("GST → 4, Gulf Standard Time (not Gustavus)", "GST", 4);
+resolvesTo("GST → Gulf Standard Time (not Gustavus)", "GST", "Asia/Dubai");
 
 console.log("\nMajor places beat rare abbreviations");
 resolvesTo("CLT → Charlotte (not Chile Time)",       "CLT", "America/New_York");
@@ -119,7 +121,7 @@ expect("IST after IANA name, LHR → Istanbul (IANA gives no signal)",
   resolveCodes(["Europe/London", "ist", "lhr"])[1], "Europe/Istanbul");
 resolvesTo("HKT alone → 8, Hong Kong Time",      "HKT", 8);
 resolvesTo("HKT after SFO → Phuket",             "HKT", "Asia/Bangkok", ["sfo"]);
-resolvesTo("ICT after PST → 7, Indochina Time",  "ICT", 7, ["pst"]);
+resolvesTo("ICT after PST → Indochina Time",     "ICT", "Asia/Bangkok", ["pst"]);
 resolvesTo("ICT after JFK → Wichita",            "ICT", "America/Chicago", ["jfk"]);
 resolvesTo("Lowercase ist after lhr → Istanbul", "ist", "Europe/Istanbul", ["lhr"]);
 
@@ -134,6 +136,34 @@ expect("no unclassified collisions (add them to `collisions`)", unclassified.joi
 const stale = Object.keys(collisions)
   .filter((code) => !(code in zoneAbbreviations) || !(code in airportMap));
 expect("no stale `collisions` entries", stale.join(", "), "");
+
+console.log("\nAbbreviations whose offsets changed (#12)");
+resolvesTo("MSK → Europe/Moscow (+3, not +4)",      "MSK",  "Europe/Moscow");
+resolvesTo("VOLT → Europe/Volgograd (+3, not +4)",  "VOLT", "Europe/Volgograd");
+resolvesTo("KGT → Asia/Bishkek (+6, not +7)",       "KGT",  "Asia/Bishkek");
+resolvesTo("VET → America/Caracas (−4, not −4.5)",  "VET",  "America/Caracas");
+resolvesTo("IRDT → Asia/Tehran (no DST since 2022)", "IRDT", "Asia/Tehran");
+
+console.log("\nAbbreviation values stay in step with the time zone database");
+// Abbreviations the time zone database uses this year, with their UTC offsets in hours
+const year = new Date().getUTCFullYear();
+const tzdbOffsets = {};
+for (const zone of tzdb.zoneNames()) {
+  for (const month of [0, 6]) {
+    const t = Date.UTC(year, month, 15);
+    const abbreviation = tzdb.abbreviation(zone, t).toUpperCase();
+    if (!/^[A-Z]+$/.test(abbreviation)) continue;
+    (tzdbOffsets[abbreviation] ??= new Set()).add(tzdb.totalOffset(zone, t).minutes() / 60);
+  }
+}
+const unconfirmed = Object.entries(zoneAbbreviations)
+  .filter(([code, value]) => typeof value === "number" && !tzdbOffsets[code]?.has(value))
+  .map(([code, value]) => `${code}=${value}`);
+expect("every fixed offset matches the database (otherwise map it to an IANA zone)",
+  unconfirmed.join(" "), "");
+const unknownZones = [...new Set([...Object.values(zoneAbbreviations), ...Object.values(airportMap)])]
+  .filter((value) => typeof value === "string" && !tzdb.exists(value));
+expect("every IANA zone exists in the database", unknownZones.join(" "), "");
 
 // --- Summary ---
 console.log(`\n${passed} passed, ${failed} failed`);
