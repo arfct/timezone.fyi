@@ -143,6 +143,8 @@ resolvesTo("VOLT → Europe/Volgograd (+3, not +4)",  "VOLT", "Europe/Volgograd"
 resolvesTo("KGT → Asia/Bishkek (+6, not +7)",       "KGT",  "Asia/Bishkek");
 resolvesTo("VET → America/Caracas (−4, not −4.5)",  "VET",  "America/Caracas");
 resolvesTo("IRDT → Asia/Tehran (no DST since 2022)", "IRDT", "Asia/Tehran");
+resolvesTo("BDT → Bangladesh (not Brunei)",          "BDT",  "Asia/Dhaka");
+resolvesTo("HAST → Hawaii (−10 all year, not Adak)", "HAST", "Pacific/Honolulu");
 
 console.log("\nAbbreviation values stay in step with the time zone database");
 // Abbreviations the time zone database uses this year, with their UTC offsets in hours
