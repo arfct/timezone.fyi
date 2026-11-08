@@ -15,7 +15,10 @@ import majorPlaceList from "./major-places.json" with { type: "json" };
 
 const { resolveCodes } = lookup;
 const majorPlaces = new Set(majorPlaceList);
-const tzdb = createRequire(import.meta.url)("timezonecomplete").TzDatabase.instance();
+const require = createRequire(import.meta.url);
+const tc = require("timezonecomplete");
+tc.TzDatabase.init(require("tzdata")); // the same data common.js loads
+const tzdb = tc.TzDatabase.instance();
 
 // Resolve `code` as it would appear among `context` codes in one URL
 function resolve(code, context = []) {

@@ -1,0 +1,34 @@
+name: Merge tzdata updates
+
+# A new IANA time zone release reaches the site without anyone acting:
+# Dependabot's tzdata pull request merges itself once the tests pass. If they
+# fail, the pull request stays open for a human.
+on: pull_request
+
+permissions:
+  contents: write
+  pull-requests: write
+
+jobs:
+  merge:
+    if: >-
+      github.event.pull_request.user.login == 'dependabot[bot]' &&
+      startsWith(github.head_ref, 'dependabot/npm_and_yarn/tzdata-')
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+          cache: "npm"
+
+      - run: npm ci
+
+      - run: npm test
+
+      - name: Merge
+        run: gh pr merge --squash "$PR_URL"
+        env:
+          PR_URL: ${{ github.event.pull_request.html_url }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}

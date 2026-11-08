@@ -1,0 +1,10 @@
+# Keeps the time zone rules current. tzdata pull requests merge themselves
+# once the tests pass (see workflows/tzdata-automerge.yml).
+version: 2
+updates:
+  - package-ecosystem: npm
+    directory: /
+    schedule:
+      interval: monthly
+    allow:
+      - dependency-name: tzdata
