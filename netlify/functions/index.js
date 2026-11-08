@@ -26,7 +26,7 @@ export default async (req, context) => {
         </div>
         <div class="time">${z.startString}${superscriptDayOffset(z.dayOffset)}${
         z.endString ? `<div class="dash">–</div>` : ""
-      }${z.endString}</div>
+      }${z.endString}${superscriptDayOffset(z.endDayOffset)}</div>
         
       </div>`);
     });

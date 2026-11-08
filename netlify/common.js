@@ -1,7 +1,12 @@
 import * as tc from "timezonecomplete";
 import tzdata from "tzdata";
 import { resolveCodes } from "./zone-lookup.js";
-import { dayOffset as getDayOffset, formatDayOffset } from "./day-offset.js";
+import {
+  dayOffset as getDayOffset,
+  formatDayOffset,
+  superscriptDayOffset,
+} from "./day-offset.js";
+import { parseTime } from "./parse-time.js";
 
 // Use the top-level tzdata package, which Dependabot keeps current, instead of
 // the older copy that timezonecomplete pins and would load on its own.
@@ -145,31 +150,11 @@ export const getZoneInfo = (path) => {
           .sub(tc.seconds(current.second()))
           .sub(tc.milliseconds(current.millisecond()));
       } else {
-        // Handle difference in params[0] on local vs server (firebase) looking at leading slash
-        var timeRE =
-          /\/?(?<label>[^\/]+\/)?(?<h1>\d?\d):?(?<m1>\d\d)?(?<p1>[aph])?m?-?(?<h2>\d?\d)?:?(?<m2>\d\d)?(?<p2>[aph])?m?/;
-        var match = timeString.match(timeRE);
-        if (!match) return { error: `Could not parse time from: ${timeString}` };
-        var groups = match.groups;
-
-        label = groups.label;
-        if (label) label = decodePrettyComponent(label.slice(0, -1));
-
-        start = new tc.now(tc.zone(firstZone))
-          .startOfDay()
-          .add(tc.hours(parseInt(groups.h1)))
-          .add(tc.minutes(parseInt(groups.m1) || 0));
-
-        if (groups.p1 == "p" && start.hour() < 12)
-          start = start.add(tc.hours(12));
-        if (groups.h2) {
-          end = new tc.now(tc.zone(firstZone))
-            .startOfDay()
-            .add(tc.hours(parseInt(groups.h2)))
-            .add(tc.minutes(parseInt(groups.m2) || 0));
-          if ((groups.p2 == "p" && end.hour() < 12) || start.hour() > end.hour())
-            end = end.add(tc.hours(12));
-        }
+        var parsed = parseTime(timeString, tc.now(tc.zone(firstZone)));
+        if (!parsed) return { error: `Could not parse time from: ${timeString}` };
+        start = parsed.start;
+        end = parsed.end;
+        if (parsed.label) label = decodePrettyComponent(parsed.label);
       }
 
       let duration = end ? end.diff(start).minutes() : undefined;
@@ -185,8 +170,10 @@ export const getZoneInfo = (path) => {
 
           let omitXM = false;
           var endString = "";
+          var endDayOffset = 0;
           if (end) {
             var zoneEnd = end.toZone(tcz);
+            endDayOffset = getDayOffset(start, zoneEnd);
             endString = zoneEnd
               .format("h:mm a")
               .replace(" PM", "ᴘᴍ")
@@ -209,10 +196,13 @@ export const getZoneInfo = (path) => {
             .replace(/_/g, " ")
             .toUpperCase();
 
+          // A range marks each end beside its time; a single time puts the
+          // marker after the zone name.
           var dayMarker = formatDayOffset(dayOffset);
-          var description = `${startString}${
-            endString ? "‑" + endString : ""
-          } ${niceZoneName}${dayMarker ? " " + dayMarker : ""}`;
+          var description = endString
+            ? `${startString}${superscriptDayOffset(dayOffset)}‑` +
+              `${endString}${superscriptDayOffset(endDayOffset)} ${niceZoneName}`
+            : `${startString} ${niceZoneName}${dayMarker ? " " + dayMarker : ""}`;
           var night =
             zoneStart.hour() > 14 || zoneStart.hour() <= 6 ? "night" : "";
           var zoneInfo = {
@@ -225,6 +215,7 @@ export const getZoneInfo = (path) => {
             startString,
             endString,
             dayOffset,
+            endDayOffset,
           };
           info.zones.push(zoneInfo);
         }
