@@ -13,7 +13,7 @@
     "@netlify/functions": "^2.8.2",
     "canvas": "^3.2.2",
     "timezonecomplete": "^5.13.1",
-    "tzdata": "^1.0.52"
+    "tzdata": "^1.0.53"
   },
   "private": true
 }
