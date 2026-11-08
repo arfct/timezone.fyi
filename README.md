@@ -40,6 +40,7 @@ netlify/
     og.js        → Open Graph image generation
   common.js      → timezone parsing and calculation logic
   zone-lookup.js → turns zone codes into offsets or IANA zones (abbreviations, aliases, airports)
+  day-offset.js  → the +1/−1 day marker beside each time
   airport-map-data.json  → precomputed IATA → IANA timezone map (~9,800 airports + metro codes)
   major-places.json      → large airports and metro codes; tests use it to check every collision is classified
 scripts/
