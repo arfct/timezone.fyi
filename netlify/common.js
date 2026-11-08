@@ -6,7 +6,7 @@ import {
   formatDayOffset,
   superscriptDayOffset,
 } from "./day-offset.js";
-import { parseTime } from "./parse-time.js";
+import { decodePrettyComponent, parseTime } from "./parse-time.js";
 
 // Use the top-level tzdata package, which Dependabot keeps current, instead of
 // the older copy that timezonecomplete pins and would load on its own.
@@ -38,11 +38,6 @@ function toTcZone(z) {
   }
 
   return z;
-}
-
-function decodePrettyComponent(s) {
-  let replacements = { "---": " - ", "--": "-", "-": " " };
-  return decodeURIComponent(s.replace(/-+/g, (e) => replacements[e] ?? "-"));
 }
 
 var hourMoji = [
@@ -154,7 +149,7 @@ export const getZoneInfo = (path) => {
         if (!parsed) return { error: `Could not parse time from: ${timeString}` };
         start = parsed.start;
         end = parsed.end;
-        if (parsed.label) label = decodePrettyComponent(parsed.label);
+        label = parsed.label;
       }
 
       let duration = end ? end.diff(start).minutes() : undefined;

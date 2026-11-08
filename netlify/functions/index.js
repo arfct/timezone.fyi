@@ -33,9 +33,13 @@ export default async (req, context) => {
 
     if (info.label) zoneStrings.push(info.label);
 
-    let dtstart = `DTSTART;TZID=${info.start.zone().name()}:${info.start.format(
-      "yyyyMMddThhmmss"
-    )}`;
+    // Calendar times in UTC, e.g. 20261108T060000Z
+    const pad2 = n => String(n).padStart(2, "0");
+    const utcStamp = dt => {
+      const u = dt.toZone(tc.zone("UTC"));
+      return `${u.year()}${pad2(u.month())}${pad2(u.day())}T${pad2(u.hour())}${pad2(u.minute())}${pad2(u.second())}Z`;
+    };
+    let dtstart = `DTSTART:${utcStamp(info.start)}`;
     console.log({ dtstart });
     let duration = "PT" + (info.duration || 30) + "M";
     var description = zoneStrings.join("  •  ");
@@ -55,14 +59,9 @@ END:VEVENT
 END:VCALENDAR`
     );
 
-    // Build Google Calendar URL using UTC times
-    const pad2 = n => String(n).padStart(2, "0");
-    const gcalFmt = dt => {
-      const u = dt.toZone(tc.zone("UTC"));
-      return `${u.year()}${pad2(u.month())}${pad2(u.day())}T${pad2(u.hour())}${pad2(u.minute())}${pad2(u.second())}Z`;
-    };
+    // Build Google Calendar URL
     const endTime = info.end || info.start.add(tc.minutes(30));
-    const gcalDates = `${gcalFmt(info.start)}/${gcalFmt(endTime)}`;
+    const gcalDates = `${utcStamp(info.start)}/${utcStamp(endTime)}`;
     const gcalUrl = `https://calendar.google.com/calendar/render?action=TEMPLATE&text=${encodeURIComponent(info.label || defaultName)}&dates=${gcalDates}&details=${encodeURIComponent(description)}&location=${encodeURIComponent(url.toString())}`;
 
     return new Response(
@@ -79,7 +78,7 @@ END:VCALENDAR`
         }">
         ${
           info.zones
-            ? `<meta property="og:image" content="/og?path=${path}">`
+            ? `<meta property="og:image" content="/og?path=${encodeURIComponent(path)}">`
             : ""
         }
         <meta property="og:type" content="website">

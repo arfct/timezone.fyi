@@ -60,6 +60,26 @@ console.log("\nLabels");
 expect("label before the time", parseTime("standup/9:30", NOV_9).label, "standup");
 expect("time after a label", times("standup/9:30"), "2026-11-09 09:30");
 expect("no label", parseTime("9:30", NOV_9).label, undefined);
+expect("a hyphen in a label is a space", parseTime("team-standup/10am", NOV_9).label, "team standup");
+expect("two hyphens are one hyphen", parseTime("weekly--sync/10am", NOV_9).label, "weekly-sync");
+expect("three hyphens are a spaced hyphen", parseTime("plan---review/10am", NOV_9).label, "plan - review");
+expect("a percent sign in a label", parseTime("100%-done/10am", NOV_9).label, "100% done");
+
+console.log("\nOther ways to write a time");
+expect("930am", times("930am"), "2026-11-09 09:30");
+expect("1030-1130", times("1030-1130"), "2026-11-09 10:30 → 2026-11-09 11:30");
+expect("130pm-3", times("130pm-3"), "2026-11-09 13:30 → 2026-11-09 15:00");
+expect("uppercase 10:30PM", times("10:30PM"), "2026-11-09 22:30");
+expect("uppercase 10PM-1AM", times("10PM-1AM"), "2026-11-09 22:00 → 2026-11-10 01:00");
+
+console.log("\n24-hour times: 0, a leading zero, 13-23, or h");
+expect("0-2pm starts at midnight", times("0-2pm"), "2026-11-09 00:00 → 2026-11-09 14:00");
+expect("8-0 ends at midnight", times("8-0"), "2026-11-09 08:00 → 2026-11-10 00:00");
+expect("07-9pm starts at 7am", times("07-9pm"), "2026-11-09 07:00 → 2026-11-09 21:00");
+expect("14h30", times("14h30"), "2026-11-09 14:30");
+expect("9h30-11h", times("9h30-11h"), "2026-11-09 09:30 → 2026-11-09 11:00");
+expect("10h-2h ends at 2am", times("10h-2h"), "2026-11-09 10:00 → 2026-11-10 02:00");
+expect("11h-1am starts at 11am", times("11h-1am"), "2026-11-09 11:00 → 2026-11-10 01:00");
 
 console.log("\nRanges within one day");
 expect("10-2 is 10am to 2pm", times("10-2"), "2026-11-09 10:00 → 2026-11-09 14:00");
@@ -92,6 +112,7 @@ console.log("\nDays when the clocks change");
 expect("10pm on the day DST ends", times("10pm", day(2026, 11, 1)), "2026-11-01 22:00");
 expect("10pm on the day DST starts", times("10pm", day(2026, 3, 8)), "2026-03-08 22:00");
 expect("10pm-1am on the day DST ends", times("10pm-1am", day(2026, 11, 1)), "2026-11-01 22:00 → 2026-11-02 01:00");
+expect("2-3am in the hour DST skips keeps its length", times("2-3am", day(2026, 3, 8)), "2026-03-08 03:00 → 2026-03-08 04:00");
 
 // --- Summary ---
 console.log(`\n${passed} passed, ${failed} failed`);
