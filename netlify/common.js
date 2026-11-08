@@ -1,9 +1,11 @@
 import * as tc from "timezonecomplete";
-import tzdata from "tzdata";
+import { createRequire } from "module";
 import { resolveCodes } from "./zone-lookup.js";
 
 // Use the top-level tzdata package, which Dependabot keeps current, instead of
 // the older copy that timezonecomplete pins and would load on its own.
+const require = createRequire(import.meta.url);
+const tzdata = require("tzdata");
 tc.TzDatabase.init(tzdata);
 
 // in: one value from resolveCodes()
@@ -37,6 +39,26 @@ function toTcZone(z) {
 function decodePrettyComponent(s) {
   let replacements = { "---": " - ", "--": "-", "-": " " };
   return decodeURIComponent(s.replace(/-+/g, (e) => replacements[e] ?? "-"));
+}
+
+function calendarDayDiff(base, target) {
+  const utcBase = Date.UTC(base.year(), base.month() - 1, base.day());
+  const utcTarget = Date.UTC(target.year(), target.month() - 1, target.day());
+  return Math.round((utcTarget - utcBase) / 86400000);
+}
+
+function formatDayMarker(diff) {
+  if (diff === 0) return "";
+  if (diff === 1) return "⁺¹";
+  if (diff === -1) return "⁻¹";
+  if (diff > 1) return `⁺${diff}`;
+  return `⁻${Math.abs(diff)}`;
+}
+
+function formatDayMarkerText(diff) {
+  if (diff === 0) return "";
+  if (diff > 0) return `+${diff}`;
+  return `-${Math.abs(diff)}`;
 }
 
 var hourMoji = [
@@ -159,15 +181,29 @@ export const getZoneInfo = (path) => {
           .add(tc.hours(parseInt(groups.h1)))
           .add(tc.minutes(parseInt(groups.m1) || 0));
 
-        if (groups.p1 == "p" && start.hour() < 12)
+        if (groups.p1 == "p" && start.hour() < 12) {
           start = start.add(tc.hours(12));
+        } else if (groups.p1 == "a" && parseInt(groups.h1) === 12) {
+          start = start.sub(tc.hours(12));
+        }
+
         if (groups.h2) {
           end = new tc.now(tc.zone(firstZone))
             .startOfDay()
             .add(tc.hours(parseInt(groups.h2)))
             .add(tc.minutes(parseInt(groups.m2) || 0));
-          if ((groups.p2 == "p" && end.hour() < 12) || start.hour() > end.hour())
+
+          if (groups.p2 == "p" && end.hour() < 12) {
             end = end.add(tc.hours(12));
+          } else if (groups.p2 == "a" && parseInt(groups.h2) === 12) {
+            end = end.sub(tc.hours(12));
+          } else if (!groups.p2 && groups.p1 !== "p" && start.hour() > end.hour()) {
+            end = end.add(tc.hours(12));
+          }
+
+          if (end.lessEqual(start)) {
+            end = end.add(tc.days(1));
+          }
         }
       }
 
@@ -180,12 +216,23 @@ export const getZoneInfo = (path) => {
           var tcz = tc.zone(tzName);
 
           var zoneStart = start.toZone(tcz);
-          var extraDay = start.day() < zoneStart.day();
+          var zoneEnd = end ? end.toZone(tcz) : undefined;
+
+          var startDayDiff = calendarDayDiff(start, zoneStart);
+          var endDayDiff = zoneEnd ? calendarDayDiff(start, zoneEnd) : 0;
+
+          var startMarker = formatDayMarker(startDayDiff);
+          var endMarker = zoneEnd ? formatDayMarker(endDayDiff) : "";
+
+          var startMarkerText = formatDayMarkerText(startDayDiff);
+          var endMarkerText = formatDayMarkerText(endDayDiff);
+
+          var extraDay = startDayDiff > 0;
+          var endExtraDay = endDayDiff > 0;
 
           let omitXM = false;
           var endString = "";
-          if (end) {
-            var zoneEnd = end.toZone(tcz);
+          if (zoneEnd) {
             endString = zoneEnd
               .format("h:mm a")
               .replace(" PM", "ᴘᴍ")
@@ -208,9 +255,9 @@ export const getZoneInfo = (path) => {
             .replace(/_/g, " ")
             .toUpperCase();
 
-          var description = `${startString}${
-            endString ? "‑" + endString : ""
-          } ${niceZoneName} ${extraDay ? " +1" : ""}`;
+          var description = endString
+            ? `${startString}${startMarkerText}‑${endString}${endMarkerText} ${niceZoneName}`
+            : `${startString} ${niceZoneName}${startMarkerText ? " " + startMarkerText : ""}`;
           var night =
             zoneStart.hour() > 14 || zoneStart.hour() <= 6 ? "night" : "";
           var zoneInfo = {
@@ -223,6 +270,11 @@ export const getZoneInfo = (path) => {
             startString,
             endString,
             extraDay,
+            endExtraDay,
+            startDayDiff,
+            endDayDiff,
+            startMarker,
+            endMarker,
           };
           info.zones.push(zoneInfo);
         }

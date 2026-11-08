@@ -23,9 +23,9 @@ export default async (req, context) => {
           <div class="nicezone">${z.niceZoneName}</div>
           <div class="actualzone">${z.zoneStart.zone().name()}</div>
         </div>
-        <div class="time">${z.startString}${z.extraDay ? "⁺¹" : ""}${
+        <div class="time">${z.startString}${z.startMarker || (z.extraDay ? "⁺¹" : "")}${
         z.endString ? `<div class="dash">–</div>` : ""
-      }${z.endString}</div>
+      }${z.endString}${z.endMarker || (z.endExtraDay ? "⁺¹" : "")}</div>
         
       </div>`);
     });
