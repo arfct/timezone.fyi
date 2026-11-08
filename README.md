@@ -74,6 +74,10 @@ npm run build:airports
 
 The build script fetches `airports.csv` and `citycodes.csv` directly from GitHub, plus [OurAirports](https://ourairports.com/data/) `airports.csv` for airport size. It also writes `netlify/major-places.json`: large airports and metro codes. After regenerating, run `npm test`. It fails if a zone abbreviation now matches a major place that isn't classified in `collisions` in `netlify/zone-lookup.js`.
 
+## Time zone data
+
+Times come from the IANA time zone database via the `tzdata` npm package, which `netlify/common.js` loads into `timezonecomplete`. It doesn't use the older copy that `timezonecomplete` pins. Dependabot checks `tzdata` monthly. Its pull request merges itself once `npm test` passes ([workflow](.github/workflows/tzdata-automerge.yml)), so a new release deploys without anyone acting. If a release breaks a test, the pull request stays open. For example, a test fails when the database stops confirming a fixed offset in `netlify/zone-lookup.js`.
+
 ## Deployment
 
 Deployed on [Netlify](https://netlify.com). Push to `main` to deploy.

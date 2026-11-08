@@ -1,6 +1,10 @@
 import * as tc from "timezonecomplete";
-import tzdata from "tzdata"; // here just to make sure it's included in the build
+import tzdata from "tzdata";
 import { resolveCodes } from "./zone-lookup.js";
+
+// Use the top-level tzdata package, which Dependabot keeps current, instead of
+// the older copy that timezonecomplete pins and would load on its own.
+tc.TzDatabase.init(tzdata);
 
 // in: one value from resolveCodes()
 // out: an argument for tc.zone()
