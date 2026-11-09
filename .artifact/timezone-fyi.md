@@ -11,6 +11,9 @@ media:
   - src: zones.png
     caption: A shared time, laid out in three cities
     alt: A page titled team sync with three columns, New York 10AM, London 3PM and Tokyo 12AM with a next-day marker, each with a clock face on its own gradient
+  - src: airports.png
+    caption: Four airport codes, each column dressed for its hour
+    alt: Four vertical columns, each with a clock face, labelled SFO 9AM on pale green, LHR 5PM on pink, DEL 10:30PM on navy and SYD 4AM with a next-day marker on deep blue
   - src: home.png
     caption: The landing page, explaining its own URL format
     alt: A plain white page titled timezone.fyi listing the URL structure and the zone formats it accepts
