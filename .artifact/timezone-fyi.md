@@ -4,6 +4,7 @@ date: 2020-11
 category: product
 tags:
   - web
+  - time
 url: https://timezone.fyi
 links:
   source: https://github.com/arfct/timezone.fyi
