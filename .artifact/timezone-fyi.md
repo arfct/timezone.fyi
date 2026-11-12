@@ -1,5 +1,5 @@
 ---
-title: Timezone.fyi
+title: timezone.fyi
 date: 2020-11
 category: product
 tags:

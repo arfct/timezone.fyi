@@ -89,4 +89,4 @@ Deployed on [Netlify](https://netlify.com). Push to `main` to deploy.
 
 ## Catalogue
 
-The catalogue entry for this product lives in [`.artifact/timezone-fyi.md`](.artifact/timezone-fyi.md), with its icon and images beside it. Edit it here, in the same PR as any change that would make it wrong.
+The catalogue entry for this product lives in [`.artifact/timezone-fyi.md`](.artifact/timezone-fyi.md), with its images beside it. Edit it here, in the same PR as any change that would make it wrong.
