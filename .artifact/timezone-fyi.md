@@ -1,6 +1,7 @@
 ---
 title: timezone.fyi
 date: 2020-11
+status: released
 category: product
 tags:
   - web
@@ -18,8 +19,7 @@ media:
   - src: home.png
     caption: The landing page, which gives the URL format and the kinds of zone it accepts
     alt: A plain white page titled timezone.fyi listing the URL structure and the zone formats it accepts
-unconfirmed:
-  - date
+unconfirmed: [date, status]
 ---
 
 IST is India Standard Time in the address timezone.fyi/10am,pst,ist and Istanbul's airport in timezone.fyi/10am,lhr,ist. The site reads a time and a list of zones from its own URL and returns a page with a column for each zone. Zones may be written as abbreviations, city aliases, IANA names, GMT offsets or any of about 9,800 airport and metro codes. Many abbreviations are also airport codes, and the few that are plausible either way are settled by the first code in the list that can be read only one way.
