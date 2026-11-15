@@ -2,7 +2,7 @@
 title: timezone.fyi
 date: 2020-11
 status: released
-category: product
+category: web-tool
 tags:
   - web
   - time
