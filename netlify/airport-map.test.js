@@ -61,6 +61,15 @@ expect("PER (Perth) → Australia/Perth",            airportMap["PER"], "Austral
 expect("ADL (Adelaide) → Australia/Adelaide",      airportMap["ADL"], "Australia/Adelaide");
 expect("ZQN (Queenstown, NZ) → Pacific/Auckland",  airportMap["ZQN"], "Pacific/Auckland");
 
+console.log("\nCodes IATA reassigned to new airports (checked against OurAirports coordinates)");
+expect("RSI (Red Sea Intl, SA) → Asia/Riyadh",   airportMap["RSI"], "Asia/Riyadh");
+expect("CCE (Capital Intl, EG) → Africa/Cairo",  airportMap["CCE"], "Africa/Cairo");
+expect("YSQ (Songyuan, CN) → Asia/Shanghai",     airportMap["YSQ"], "Asia/Shanghai");
+
+console.log("\nNew airports");
+expect("WSI (Western Sydney) → Australia/Sydney", airportMap["WSI"], "Australia/Sydney");
+expect("DXN (Noida, IN) → Asia/Kolkata",          airportMap["DXN"], "Asia/Kolkata");
+
 console.log("\nMetro area codes (citycodes.csv)");
 expect("NYC → America/New_York",   airportMap["NYC"], "America/New_York");
 expect("LON → Europe/London",      airportMap["LON"], "Europe/London");

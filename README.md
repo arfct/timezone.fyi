@@ -25,7 +25,7 @@ Accepted zone formats:
 - City aliases: `NYC`, `LON`, `TOK`, `SF`
 - GMT offsets: `GMT+5`, `GMT-8`
 - IANA names: `America/New_York`, `Europe/London`
-- Airport codes: `JFK`, `LHR`, `NRT`, `DXB` (~9,800 airports)
+- Airport codes: `JFK`, `LHR`, `NRT`, `DXB` (~9,250 airports)
 - Metro area codes: `NYC`, `LON`, `TYO`, `PAR`, `CHI` ([full list](https://en.wikipedia.org/wiki/List_of_airports_by_IATA_metropolitan_area_code))
 
 Many zone abbreviations are also airport codes. The abbreviation wins, except that large airports and metro codes beat rarely used abbreviations: `CLT` is Charlotte, not Chile Time. A few codes are plausible either way (`IST`, `HKT`, `ICT`). For these, the first other code that's a zone abbreviation or a place decides: `/10am,pst,ist` is India and `/10am,lhr,ist` is Istanbul. The full list, including hand-picked exceptions such as `MHT` (Manchester, NH), is `collisions` in `netlify/zone-lookup.js`.
@@ -45,7 +45,7 @@ netlify/
   parse-time.js  → reads the time or range in a URL (10pm-1am, 1-2pm) as times today
   day-offset.js  → the +1/−1 day marker beside each time
   escape.js      → escapes text from the URL for the page and the calendar file
-  airport-map-data.json  → precomputed IATA → IANA timezone map (~9,800 airports + metro codes)
+  airport-map-data.json  → precomputed IATA → IANA timezone map (~9,250 airports + metro codes)
   major-places.json      → large airports and metro codes; tests use it to check every collision is classified
 scripts/
   build-airport-map.mjs  → regenerates airport-map-data.json and major-places.json
@@ -69,7 +69,7 @@ npm test           # runs the full test suite
 
 ## Regenerating the airport map
 
-`netlify/airport-map-data.json` is a precomputed map of IATA codes → IANA timezone strings, covering ~9,800 airports plus metropolitan area codes. It's committed so no download is needed at runtime or install time.
+`netlify/airport-map-data.json` is a precomputed map of IATA codes → IANA timezone strings, covering ~9,250 airports plus metropolitan area codes. It's committed so no download is needed at runtime or install time.
 
 Data is sourced from [lxndrblz/Airports](https://github.com/lxndrblz/Airports) and fetched at build time — no local files required:
 
@@ -78,6 +78,8 @@ npm run build:airports
 ```
 
 The build script fetches `airports.csv` and `citycodes.csv` directly from GitHub, plus [OurAirports](https://ourairports.com/data/) `airports.csv` for airport size. It also writes `netlify/major-places.json`: large airports and metro codes. After regenerating, run `npm test`. It fails if a zone abbreviation now matches a major place that isn't classified in `collisions` in `netlify/zone-lookup.js`.
+
+A refresh can remove codes and change zones. lxndrblz/Airports drops codes that aren't in IATA's public code directory, and moves a code to its new airport when IATA reassigns it: `RSI` was Río Sidra, Panama, and is now Red Sea International, Saudi Arabia. Before committing, check each changed zone against the airport's coordinates in OurAirports.
 
 ## Time zone data
 
