@@ -84,6 +84,13 @@ resolvesTo("QDF → America/Chicago",   "QDF", "America/Chicago");
 resolvesTo("QHO → America/Chicago",   "QHO", "America/Chicago");
 resolvesTo("QMI → America/New_York",  "QMI", "America/New_York");
 
+console.log("\nAirports whose zone in airport-map-data.json is wrong (#28)");
+resolvesTo("ASF (Astrakhan) → Europe/Astrakhan",          "ASF", "Europe/Astrakhan");
+resolvesTo("BAX (Barnaul) → Asia/Barnaul",                "BAX", "Asia/Barnaul");
+resolvesTo("CJS (Ciudad Juárez) → America/Ciudad_Juarez", "CJS", "America/Ciudad_Juarez");
+resolvesTo("PUQ (Punta Arenas) → America/Punta_Arenas",   "PUQ", "America/Punta_Arenas");
+resolvesTo("SBD (San Bernardino) → America/Los_Angeles",  "SBD", "America/Los_Angeles");
+
 console.log("\nColloquial aliases");
 resolvesTo("SF → America/Los_Angeles", "SF",  "America/Los_Angeles");
 resolvesTo("TOK → Asia/Tokyo",         "TOK", "Asia/Tokyo");

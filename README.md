@@ -79,7 +79,7 @@ npm run build:airports
 
 The build script fetches `airports.csv` and `citycodes.csv` directly from GitHub, plus [OurAirports](https://ourairports.com/data/) `airports.csv` for airport size. It also writes `netlify/major-places.json`: large airports and metro codes. After regenerating, run `npm test`. It fails if a zone abbreviation now matches a major place that isn't classified in `collisions` in `netlify/zone-lookup.js`.
 
-A refresh can remove codes and change zones. lxndrblz/Airports drops codes that aren't in IATA's public code directory, and moves a code to its new airport when IATA reassigns it: `RSI` was Río Sidra, Panama, and is now Red Sea International, Saudi Arabia. Before committing, check each changed zone against the airport's coordinates in OurAirports.
+A refresh can remove codes and change zones. lxndrblz/Airports drops codes that aren't in IATA's public code directory, and moves a code to its new airport when IATA reassigns it: `RSI` was Río Sidra, Panama, and is now Red Sea International, Saudi Arabia. Before committing, check each changed zone against the airport's coordinates in OurAirports. Corrections to upstream zones go in `placeAliases` in `netlify/zone-lookup.js`.
 
 ## Time zone data
 

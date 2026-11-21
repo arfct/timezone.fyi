@@ -98,7 +98,7 @@ expect("GIG → America/Sao_Paulo (not Brazil/East)", airportMap["GIG"], "Americ
 
 console.log("\nTCI collision — lxndrblz maps TCI to a Russian airport, not Tenerife");
 // TCI in the JSON should be Asia/Vladivostok (Terney Airport, RU).
-// The Tenerife metro override is handled in common.js, not the JSON.
+// The Tenerife metro override is handled in placeAliases in zone-lookup.js, not the JSON.
 expect("TCI in JSON → Asia/Vladivostok (Russian airport)", airportMap["TCI"], "Asia/Vladivostok");
 
 console.log("\nUnknown code returns undefined");
