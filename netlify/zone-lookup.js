@@ -201,6 +201,14 @@ const placeAliases = {
   QHO: "America/Chicago",   // Houston — not in lxndrblz
   QMI: "America/New_York",  // Miami — not in lxndrblz
 
+  // Airports lxndrblz puts in the wrong zone, checked against the airport's
+  // coordinates in lxndrblz and OurAirports
+  ASF: "Europe/Astrakhan",       // Astrakhan — lxndrblz: Europe/Volgograd
+  BAX: "Asia/Barnaul",           // Barnaul — lxndrblz: Asia/Omsk
+  CJS: "America/Ciudad_Juarez",  // Ciudad Juárez — lxndrblz: America/Ojinaga
+  PUQ: "America/Punta_Arenas",   // Punta Arenas — lxndrblz: America/Santiago
+  SBD: "America/Los_Angeles",    // San Bernardino — lxndrblz: America/Whitehorse
+
   // City/colloquial aliases that are not IATA airport codes
   SF: "America/Los_Angeles",
   MTV: "America/Los_Angeles",  // Mountain View
