@@ -340,6 +340,8 @@ Coordinates are rounded to 0.1°, about 11 km, which the sun crosses in 24 secon
 
 ### From the sun to the gradient
 
+This is the first version, with one palette hour for both colours and blends in sRGB. Section 14 replaces it and keeps its marks.
+
 The 24 colour pairs stay as Nicholas tuned them. A place and an instant pick a palette hour by the sun, in a straight line between these marks:
 
 | Sun | Palette hour |
@@ -358,7 +360,7 @@ The 24 colour pairs stay as Nicholas tuned them. A place and an instant pick a p
 
 **When the sun misses a mark.** The end of the line is then set by how high or low the sun gets that day. A noon sun under 30° stops short of the full midday colours (London in December peaks at palette hour 10.4 before noon and 13.9 after). A midnight sun less than 30° down stops short of full night. In polar night the noon colours are twilight or night, by how far down the sun is; in polar day, once the midnight sun is 2° up, the midnight colours stay in the day's range (palette hours 9 to 15.5). Morning and evening colours then meet without passing through midday or midnight, so one fades into the other around that moment, over up to six hours either side. Tromsø at noon on 21 December is half dawn blue and half dusk pink. The colours never jump: across a year at ten latitudes, no channel moves more than 28 of 255 in five minutes (a test).
 
-Two weak spots. For a few days either side of the polar night, with the noon sun between the horizon and 2°, the blend of morning teal and evening orange is a dull olive for about an hour. And a white night (Reykjavik in June at midnight) is a greyish mauve.
+Two weak spots in this first version, both fixed in section 14. For a few days either side of the polar night, with the noon sun between the horizon and 2°, the blend of morning teal and evening orange was a dull olive for about an hour. And a white night (Reykjavik in June at midnight) was a greyish mauve.
 
 ### Where it applies
 
@@ -396,3 +398,92 @@ Bundle, from `wrangler deploy`: 416.98 KiB (121.94 KiB gzipped) before, 507.28 K
 - No comparison with NOAA's calculator page itself, and no dates outside 2026.
 - The browser path was checked in headless Chrome only, with its zone reported as Los Angeles.
 - `request.cf` coordinates were seen for one address (this Mac's). A request with no `cf.latitude` was only exercised through the browser fallback on a local copy of the page.
+
+## 14. Top and bottom placed separately, and a glow through short working days
+
+Nicholas asked for the two gradient colours to be chosen independently, for a slight glow along the bottom from 8 to 6 where daylight is short (Sweden in winter), for every gradient to show a colour shift, and for that shift to be between adjacent hues only. The code is `public/assets/sky.js`, one module that the Worker bundles and the browser loads. `shared.js` re-exports it.
+
+### The model
+
+The top is the upper sky. The bottom is the light along the horizon. Each has its own ramp: the 24 anchor tops in order, and the 24 anchor bottoms in order. The anchors are unchanged, and with no place (an offset nobody keeps) each clock hour is its anchor pair exactly.
+
+1. **Top.** The sun's events put the top on its ramp as in section 13: the marks hold at civil dawn, sunrise, solar noon, sunset and civil dusk, and the hour angle runs in a straight line between them. Morning and evening are separate sides of the ramp.
+2. **Bottom.** The same, for a sun 1.5° higher than it is. The horizon is lit from further round the Earth than the sky overhead, so it brightens before the top at dawn and holds its light after it at dusk. In New York at the equinox that is about 8 minutes.
+3. **Blending.** Colours are held as OKLCH. Between two neighbouring anchors a colour moves in a straight line through OKLab. Where morning and evening colours meet away from full midday or full night (a winter noon, polar night, a white night), one fades into the other around that moment. If the two are within 70° of hue the fade is a straight line (two yellows at a London winter noon). If not, the hue is led round the wheel through blue, violet and pink, the hues the dusk anchors pass through, and never through green or grey. The choice is made once per noon or midnight, from the top's colours, for both layers.
+4. **Glow.** See below.
+5. **Distinction and hue rules.** See below. They are applied last, to the bottom only.
+6. **Display P3.** Each colour is written in sRGB and again in P3 with the same lightness and hue and up to 1.3 times the chroma, as far as P3 holds it. This is worked out per colour, so the `SKY_P3` table and `scripts/build-sky-p3.mjs` are gone. The P3 values for the anchors are within 0.002 of the old table (a test).
+
+### The working-hours glow
+
+In local clock time from 08:00 to 18:00, with 45 minutes of soft edge outside each end, the bottom moves toward a plum glow: the bottom ramp at palette hour 20.4, between the 8pm and 9pm anchors, about `#763e83`. It is the last warm light in the dusk family, light enough to see and dark enough for white text.
+
+Strength is set by the day's length, sunrise to sunset. Ten hours or more gives none, so that daylight covers the working day. Four hours or fewer gives the full 0.85. In between it is a straight line. Stockholm on 21 December has 6.1 hours and gets 0.55. Tromsø in polar night gets 0.85. New York's shortest day is 9.25 hours and gets 0.11 at most, which moves the bottom by less than an eye picks out. Singapore gets none on any day (a test over the whole year).
+
+The glow only brightens. It fades out as the bottom's own lightness comes within 0.12 of the glow's, so it shows while the sun is down and adds nothing in daylight or in a bright dusk. The top is never touched.
+
+What that looks like on 21 December:
+
+| Place and time | Top | Bottom without glow | Bottom with glow |
+| --- | --- | --- | --- |
+| Stockholm 08:00, sun 4.7° down | `#056f9b` | `#042c47` | `#463c77` |
+| Stockholm 08:30 | `#097ea8` | `#06405d` | `#4c4483` |
+| Stockholm 10:00, sun 4.4° up | `#64c9ca` | `#1587a7` | the same |
+| Stockholm 15:00, just after sunset | `#c45788` | `#f38e65` | the same |
+| Stockholm 18:00 | `#262868` | `#5f357d` | `#6b3a80` |
+| Tromsø 08:00, sun 11° down | `#145289` | `#203051` | `#714181` |
+| Tromsø 12:00, sun 3° down | `#7d6cba` | `#98719f` | the same |
+| Tromsø 17:30, sun 21° down | `#15245c` | `#362173` | `#773e82` |
+
+Nicholas's brief gave Stockholm at 10:00 and 15:00 as examples of the glow. On that date the sun is up at 10:00 and the dusk is still orange at 15:00, so the bottom is already brighter than the glow and stays as it is. In Stockholm the glow shows from about 07:30 to 09:15 and from 17:45 to 18:45. In Tromsø it shows from 07:30 to 09:45 and from 16:30 to 18:45.
+
+**Text.** `dark` (light text) is decided on the colour halfway between the top and the bottom as drawn, glow included: light text when white has more contrast against it than the dark text colour. Across a year at 21 latitudes in 5-minute steps the chosen text colour always has at least 3:1 against that middle (a test).
+
+### Distinction and adjacent hues
+
+- **Minimum distinction.** Top and bottom are at least 0.06 apart in OKLab. That is the least among the anchors (9pm), so no anchor is changed. A bottom that is closer is moved straight away from the top to that distance. A bottom at the edge of sRGB is then pulled back inside, which can cost up to 0.006: the least measured is 0.0545. The first version's least was 0.016.
+- **Adjacent hues.** Top and bottom are at most 90° apart in OKLCH hue. The widest anchor pair is 88° (9am, cream over aqua). A bottom further round is turned back toward the top's hue. A colour with chroma under 0.04 has no hue to speak of and the rule lets go of it, fully at 0.02. The widest measured is 91.4°, the extra from rounding a pale colour to 8 bits. The first version's widest was 98.4°.
+- **Over time.** Every blend is between neighbours on a ramp or goes round the wheel by a set way, so a colour never passes through grey. In the same sweep the first version had 3,766 olive, 13,699 mauve and 13,986 grey colours of 4.4 million. This one has none. The bands are in `test/sky.test.js`: olive is hue 80° to 140° with lightness under 0.72, mauve is hue over 290° with chroma under 0.06 and middling lightness, grey is chroma under 0.03 with middling lightness.
+- **No jumps.** The most any colour moves in 5 minutes is 0.059 in OKLab, which is the anchors' own fastest step, at dusk. The first version's was 0.067.
+
+### Parameters
+
+All in `SKY_MODEL` in `sky.js`, each with a comment.
+
+| Name | Value | Meaning |
+| --- | --- | --- |
+| `marks` | −30° is 0 and 24, −18° is 4 and 21, −6° is 5.5 and 19.5, −0.833° is 6.5 and 18.5, 2° is 9 and 15.5, 30° is 12 | Palette hour for the sun's height, morning and evening. Used where a day's noon or midnight stops short of full midday or full night. |
+| `horizonLead` | 1.5° | The bottom is coloured for a sun this much higher. |
+| `meetSpan` | 90° of hour angle (6 hours) | The longest fade between morning and evening colours either side of a noon or midnight where they don't meet. Shorter the nearer they meet to full midday (by the square) or full night (in proportion). |
+| `dayWayWithin` | 70° | A fade goes in a straight line when the two colours are within this much hue, and round through blue, violet and pink when not. |
+| `hazeFrom`, `hazeDepth`, `hazeLight` | 70°, 0.3, 0.86 | A long fade round the wheel loses up to 30% of its chroma in the middle and lifts toward lightness 0.86, so a white night is a pale violet and not a neon one. |
+| `workFrom`, `workTo` | 08:00, 18:00 | Working hours, local clock time. |
+| `workRamp` | 45 min | Soft edge outside each end. |
+| `glowHour` | 20.4 | The glow's colour: the bottom ramp at this palette hour. |
+| `glowStrength` | 0.85 | The most the bottom moves toward the glow. |
+| `glowNoneAt`, `glowFullAt` | 10 h, 4 h | Day length at which the glow is none, and full. |
+| `glowSoft` | 0.12 | The glow fades out as the bottom's own lightness comes within this of the glow's. |
+| `minDistinction` | 0.06 | Least OKLab distance between top and bottom. |
+| `maxHueGap` | 90° | Most hue between top and bottom. |
+| `neutralChroma` | 0.04 | Below this a colour is let off the hue rule. |
+| `p3Chroma` | 1.3 | Chroma gain in Display P3. |
+
+### How close the reference day stays
+
+New York on 20 March 2026, each local hour, against the first version: no top moved more than 0.007 in OKLab and no bottom more than 0.026. Neighbouring anchors are 0.05 to 0.2 apart. The test allows 0.015 and 0.04.
+
+### Where it applies
+
+Everything that drew a sky calls `skyAt(minutes, sun)`: event page stripes, the live clocks and the viewer's card in `app.js`, the buttons (they copy a stripe), the home page's 24 stripes for the visitor's place, and the link-preview image. The image's cache version is 11. `skyAt` now needs the local clock time as well as the sun, for the glow.
+
+### Cost
+
+Local timing in Node, 400,000 calls: `sunSky` and `skyAt` together took 1.98 microseconds before and 2.55 after. `skyAt` by the clock took 1.45 before and 1.66 after. An event page with four zones spends about 2 microseconds more. I did not repeat the `wrangler tail` measurement: the change is three orders of magnitude under what that could show in section 13.
+
+Bundle, from `wrangler deploy`: 507.28 KiB (175.69 KiB gzipped) before, 515.59 KiB (178.89 KiB) after. Worker startup was reported as 4 ms. In the browser `sky.js` is 19.7 kB before compression and `shared.js` went from 10.6 to 5.7 kB.
+
+### Not verified
+
+- The look was checked in headless Chrome screenshots, which are sRGB. I have not seen the P3 colours on a P3 display.
+- The glow's colour and strength are my choice from the anchors. Nobody has looked at them in a real Swedish winter.
+- The southern hemisphere was covered by the tests' sweep (to 70° south) and not by screenshots.
