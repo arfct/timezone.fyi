@@ -134,7 +134,7 @@ Every link except a live clock has `<link>/event.ics`, served as `text/calendar`
 
 **Targets on the page.** The "Add to calendar" sheet is a native popover with text rows and no icons:
 
-- Apple Calendar or a file: `event.ics` (and `webcal://` when the event repeats).
+- Apple Calendar: `event.ics` (and `webcal://` when the event repeats).
 - Google Calendar: `calendar.google.com/calendar/render` with `dates`, and for a repeating event `ctz` and `recur`.
 - Outlook.com and Outlook for work or school: the compose link. Outlook's form takes no repeat rule, so a repeating event gets Google and the file only.
 

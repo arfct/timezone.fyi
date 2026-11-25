@@ -109,7 +109,7 @@ expect(
 expect(
   "an impossible date is an error",
   read("/2026-02-30/10am,pst").error,
-  "2026-02-30 isn't a date.",
+  "2026-02-30 is not a date.",
 );
 
 console.log("\nRelative dates redirect to the link with the date written out");
@@ -212,9 +212,9 @@ expect("spaces in the zone list", times("/10am,pst,%20est"), "10am PST · 1pm ES
 
 console.log("\nErrors");
 expect("no zones", parsePath("/10am").kind, "error");
-expect("an unknown zone", /isn't a zone/.test(read("/10am,xyz").error), true);
+expect("an unknown zone", /is not a known zone/.test(read("/10am,xyz").error), true);
 expect("a broken escape", parsePath("/%E0%A4%A/10am,pst").kind, "error");
-expect("an offset past UTC+14", /outside/.test(read("/10am,gmt+19").error), true);
+expect("an offset past UTC+14", /not a UTC offset/.test(read("/10am,gmt+19").error), true);
 
 console.log("\nThe one change to an old reading: a label that is a date or repeat word");
 expect(

@@ -25,12 +25,13 @@ export function resolveZones(codes) {
     const offset = value.match(OFFSET_RE);
     if (offset) {
       const minutes = +offset[2] * 60 + +(offset[3] ?? 0);
-      if (minutes > 14 * 60) return { error: `${code} is outside the range of UTC offsets.` };
+      if (minutes > 14 * 60)
+        return { error: `"${code}" is not a UTC offset. The largest is 14 hours.` };
       zones.push({ code, name, zone: offset[1] === "-" ? -minutes : minutes });
       continue;
     }
     const zone = canonicalZone(value);
-    if (!zone) return { error: `"${code}" isn't a zone, city or airport code this site knows.` };
+    if (!zone) return { error: `"${code}" is not a known zone, city or airport code.` };
     zones.push({ code, name, zone });
   }
   return zones;
@@ -114,7 +115,7 @@ function canonicalPath(model, date) {
 export function resolveEvent(model, now, options = {}) {
   const zones = resolveZones(model.zones);
   if (zones.error) return zones;
-  if (!zones.length) return { error: "Add at least one zone." };
+  if (!zones.length) return { error: "Add a zone." };
   const first = zones[0].zone;
   const today = wallAt(first, now);
   const todayNumber = dayNumber(today.year, today.month, today.day);
@@ -152,14 +153,14 @@ export function resolveEvent(model, now, options = {}) {
       } else if (model.recur === "weekdays") n = occurrenceOnOrAfter("weekdays", n, n);
       pinned = dateOfDayNumber(n);
     }
-    if (pinned && !validDate(pinned)) return { error: `${isoDate(pinned)} isn't a date.` };
+    if (pinned && !validDate(pinned)) return { error: `${isoDate(pinned)} is not a date.` };
     if (relative) return { redirect: canonicalPath(model, pinned) };
 
     event.floating = !pinned;
     event.path = canonicalPath(model, pinned);
 
     let date = pinned ?? options.date ?? today;
-    if (!validDate(date)) return { error: "That date isn't a date." };
+    if (!validDate(date)) return { error: "The d parameter is not a date." };
     if (pinned)
       event.anchor = {
         ...pinned,

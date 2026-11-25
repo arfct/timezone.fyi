@@ -241,7 +241,7 @@ export function offsetText(minutes) {
   return `UTC${minutes < 0 ? "−" : "+"}${Math.floor(abs / 60)}${m ? `:${pad2(m)}` : ""}`;
 }
 
-// "in 3h 12m", "in 2 days", "started 5m ago", "ended 2h ago", "now"
+// "in 3h 12m", "in 2 days", "started 5m ago", "ended 2h ago", "2h ago", "now"
 export function relativeText(start, end, now) {
   const span = (ms) => {
     const minutes = Math.round(Math.abs(ms) / 60000);
@@ -253,7 +253,7 @@ export function relativeText(start, end, now) {
   if (now < start - 30000) return `in ${span(start - now)}`;
   if (end && now < end) return `started ${span(now - start)} ago, ${span(end - now)} left`;
   if (!end && now - start < 60000) return "now";
-  return `${end ? "ended" : "was"} ${span(now - (end ?? start))} ago`;
+  return `${end ? "ended " : ""}${span(now - (end ?? start))} ago`;
 }
 
 // How many columns the zone cards sit in on a wide screen, so rows stay even:
