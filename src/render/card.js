@@ -254,7 +254,7 @@ export function eventCard(event) {
 }
 
 // The image for the home page and for links that don't parse: the 24 hours of
-// the sky gradient, and the name.
+// the sky gradient, the name and the tagline.
 export function homeCard() {
   const w = WIDTH / 24;
   const stripes = SKY.map((_, i) => skyAt(i * 60))
@@ -271,6 +271,6 @@ export function homeCard() {
     `<filter id="lift" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="10" flood-color="#000000" flood-opacity="0.35"/></filter>` +
     `<g font-family="Inter" fill="#ffffff" text-anchor="middle" filter="url(#lift)">` +
     `<text x="600" y="312" font-size="84" font-weight="700">timezone.fyi</text>` +
-    `<text x="600" y="372" font-size="32" font-weight="500">Link to a time in several zones</text></g></svg>`
+    `<text x="600" y="372" font-size="32" font-weight="500">Share your time with friends across zones.</text></g></svg>`
   );
 }

@@ -26,12 +26,17 @@ export function resolveZones(codes) {
     if (offset) {
       const minutes = +offset[2] * 60 + +(offset[3] ?? 0);
       if (minutes > 14 * 60)
-        return { error: `"${code}" is not a UTC offset. The largest is 14 hours.` };
+        return {
+          error: `"${code}" isn't a UTC offset. Offsets go up to 14 hours: gmt+14.`,
+        };
       zones.push({ code, name, zone: offset[1] === "-" ? -minutes : minutes });
       continue;
     }
     const zone = canonicalZone(value);
-    if (!zone) return { error: `"${code}" is not a known zone, city or airport code.` };
+    if (!zone)
+      return {
+        error: `"${code}" isn't a time zone, city or airport. Try nyc, lhr or Europe/Paris.`,
+      };
     zones.push({ code, name, zone });
   }
   return zones;
@@ -73,7 +78,7 @@ export function occurrenceOnOrAfter(recur, anchor, from) {
 const ORDINALS = ["th", "st", "nd", "rd"];
 const ordinal = (n) => n + (ORDINALS[n % 100 > 10 && n % 100 < 14 ? 0 : n % 10] ?? "th");
 
-// "Every Thursday", "Every weekday", "Monthly on the 3rd"
+// "Every Thursday", "Every weekday", "Every month on the 3rd"
 export function recurrenceText(recur, date) {
   const weekday = WEEKDAYS[date.weekday];
   return {
@@ -81,13 +86,19 @@ export function recurrenceText(recur, date) {
     weekdays: "Every weekday",
     weekly: `Every ${weekday}`,
     biweekly: `Every other ${weekday}`,
-    monthly: `Monthly on the ${ordinal(date.day)}`,
+    monthly: `Every month on the ${ordinal(date.day)}`,
     yearly: `Every year on ${date.day} ${MONTHS[date.month - 1]}`,
   }[recur];
 }
 
 const isoDate = ({ year, month, day }) =>
   `${year}-${String(month).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
+
+// "2026-02-30 isn't a date. February 2026 has 28 days."
+const notADate = (text, { year, month }) =>
+  month >= 1 && month <= 12
+    ? `${text} isn't a date. ${MONTHS[month - 1]} ${year} has ${daysInMonth(year, month)} days.`
+    : `${text} isn't a date. Months go from 01 to 12.`;
 
 // The path that names this event with its date written out. Keeps the label,
 // time and zones as typed.
@@ -115,7 +126,7 @@ function canonicalPath(model, date) {
 export function resolveEvent(model, now, options = {}) {
   const zones = resolveZones(model.zones);
   if (zones.error) return zones;
-  if (!zones.length) return { error: "Add a zone." };
+  if (!zones.length) return { error: "Add a time zone after the time: /10am,nyc" };
   const first = zones[0].zone;
   const today = wallAt(first, now);
   const todayNumber = dayNumber(today.year, today.month, today.day);
@@ -153,14 +164,17 @@ export function resolveEvent(model, now, options = {}) {
       } else if (model.recur === "weekdays") n = occurrenceOnOrAfter("weekdays", n, n);
       pinned = dateOfDayNumber(n);
     }
-    if (pinned && !validDate(pinned)) return { error: `${isoDate(pinned)} is not a date.` };
+    if (pinned && !validDate(pinned)) return { error: notADate(isoDate(pinned), pinned) };
     if (relative) return { redirect: canonicalPath(model, pinned) };
 
     event.floating = !pinned;
     event.path = canonicalPath(model, pinned);
 
     let date = pinned ?? options.date ?? today;
-    if (!validDate(date)) return { error: "The d parameter is not a date." };
+    if (!validDate(date))
+      return {
+        error: `"?d=${isoDate(date)}" isn't a date. Write it like ?d=2026-12-03.`,
+      };
     if (pinned)
       event.anchor = {
         ...pinned,

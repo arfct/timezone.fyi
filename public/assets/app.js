@@ -1,4 +1,4 @@
-// Everything the pages do in the browser: the "in 3h 12m" line, a card for
+// Everything the pages do in the browser: the "in 3 h 12 min" line, a card for
 // the viewer's own zone, live clocks, the copy button and the link builder.
 // No requests after the first load; times come from the browser's Intl.
 import { clockText, columnsFor, dateText, relativeText, zoneCard } from "./shared.js";
@@ -123,16 +123,26 @@ function eventPage(event) {
 function copyButton() {
   const button = document.getElementById("copy");
   if (!button) return;
+  // Why a copy failed and what to do, beside the button. The link is on the
+  // home page to select; on an event page it's in the address bar.
+  const note = document.createElement("p");
+  note.className = "copy-note";
+  note.setAttribute("role", "status");
+  button.after(note);
+  const fix = document.getElementById("builder")
+    ? "Not copied. Select the link and copy it."
+    : "Not copied. Copy the link from the address bar.";
   button.addEventListener("click", async () => {
     try {
       await navigator.clipboard.writeText(button.dataset.url);
+      note.textContent = "";
       button.textContent = "Copied";
+      setTimeout(() => {
+        button.textContent = "Copy link";
+      }, 1600);
     } catch {
-      button.textContent = "Copy failed";
+      note.textContent = fix;
     }
-    setTimeout(() => {
-      button.textContent = "Copy link";
-    }, 1600);
   });
 }
 
@@ -148,7 +158,6 @@ const slug = (label) =>
 function builder(root) {
   const field = (id) => document.getElementById(`b-${id}`);
   const link = field("link");
-  const open = field("open");
   const copy = document.getElementById("copy");
 
   function update() {
@@ -170,7 +179,6 @@ function builder(root) {
     const path = `/${parts.map((p) => encodeURI(p).replace(/[?#]/g, encodeURIComponent)).join("/")}`;
     link.textContent = root.dataset.host + decodeURI(path);
     link.href = path;
-    open.href = path;
     copy.dataset.url = location.origin + path;
   }
 

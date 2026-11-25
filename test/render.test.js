@@ -170,14 +170,56 @@ expect("10am sky wants dark text", skyAt(600).dark, false);
 expect("on the hour the sky is the hour's colours", skyAt(600).top, "#fee154");
 expect("half past is halfway to the next hour's", skyAt(630).top, "#fed253");
 const H = 3600000;
-expect("in 3h 12m", relativeText(NOW + 3 * H + 12 * 60000, undefined, NOW), "in 3h 12m");
+expect("in 3 h 12 min", relativeText(NOW + 3 * H + 12 * 60000, undefined, NOW), "in 3 h 12 min");
 expect("in 8 days", relativeText(NOW + 8 * 24 * H, undefined, NOW), "in 8 days");
 expect(
   "under way",
   relativeText(NOW - 5 * 60000, NOW + 25 * 60000, NOW),
-  "started 5m ago, 25m left",
+  "started 5 min ago, 25 min left",
 );
-expect("over", relativeText(NOW - 2 * H, NOW - H, NOW), "ended 1h ago");
+expect("over", relativeText(NOW - 2 * H, NOW - H, NOW), "ended 1 h ago");
+// 7 days 11 h 30 min apart, and 8 dates apart on the calendar
+expect(
+  "days are calendar days where the page is read",
+  relativeText(
+    new Date(2026, 11, 3, 10, 30).getTime(),
+    undefined,
+    new Date(2026, 10, 25, 23, 0).getTime(),
+  ),
+  "in 8 days",
+);
+
+console.log("\nThe words on the pages");
+const home = homePage(ORIGIN);
+const TAGLINE = "Share your time with friends across zones.";
+expect(
+  "the home title is the name and the tagline",
+  home.match(/<title>(.*?)<\/title>/)[1],
+  `timezone.fyi: ${TAGLINE}`,
+);
+expect("the tagline is under the name", home.includes(`<p class="lede">${TAGLINE}</p>`), true);
+expect("the home image carries the tagline", homeCard().includes(`>${TAGLINE}</text>`), true);
+expect(
+  "the home description has an example link",
+  meta(home, "description"),
+  "A link like timezone.fyi/10am,nyc,lon shows 10am New York time in each zone listed, on the page and in the link preview.",
+);
+expect("the builder has no Open button", /id="b-open"|>Open</.test(home), false);
+expect("the built link and Copy link stay", /id="b-link"[\s\S]*>Copy link</.test(home), true);
+expect("one noun for a zone", /\bplaces?\b/i.test(home.replace(/<[^>]*>/g, " ")), false);
+expect("one noun for an event", /\bentry\b/i.test(home + page("/10am,nyc")), false);
+expect(
+  "an undated link's description says which day",
+  meta(page("/10am,nyc"), "description"),
+  "For today, whenever the link is opened",
+);
+expect(
+  "with no length, the 1 h chip is the one selected",
+  [...page("/2026-12-03/10am,nyc").matchAll(/aria-current="true">([^<]*)</g)]
+    .map((m) => m[1])
+    .join(),
+  "1 h",
+);
 
 console.log("\nHow a time is drawn");
 const shown = page("/2026-12-03/10:30am-1pm,nyc");

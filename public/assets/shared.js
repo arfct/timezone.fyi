@@ -241,19 +241,26 @@ export function offsetText(minutes) {
   return `UTC${minutes < 0 ? "−" : "+"}${Math.floor(abs / 60)}${m ? `:${pad2(m)}` : ""}`;
 }
 
-// "in 3h 12m", "in 2 days", "started 5m ago", "ended 2h ago", "2h ago", "now"
+// "in 3 h 12 min", "in 8 days", "started 5 min ago, 55 min left", "ended 2 h ago",
+// "2 h ago", "now". From 48 hours it counts calendar days where the code runs:
+// in the browser, the reader's zone.
 export function relativeText(start, end, now) {
-  const span = (ms) => {
-    const minutes = Math.round(Math.abs(ms) / 60000);
-    if (minutes < 60) return `${minutes}m`;
-    const hours = Math.floor(minutes / 60);
-    if (hours < 48) return minutes % 60 ? `${hours}h ${minutes % 60}m` : `${hours}h`;
-    return `${Math.round(minutes / 1440)} days`;
+  const midnight = (ms) => {
+    const d = new Date(ms);
+    return new Date(d.getFullYear(), d.getMonth(), d.getDate()).getTime();
   };
-  if (now < start - 30000) return `in ${span(start - now)}`;
-  if (end && now < end) return `started ${span(now - start)} ago, ${span(end - now)} left`;
+  const span = (from, to) => {
+    const minutes = Math.round((to - from) / 60000);
+    if (minutes < 60) return `${minutes} min`;
+    const hours = Math.floor(minutes / 60);
+    if (hours < 48) return minutes % 60 ? `${hours} h ${minutes % 60} min` : `${hours} h`;
+    // Rounded, because a day with a clock change is 23 or 25 hours long
+    return `${Math.round((midnight(to) - midnight(from)) / 86400000)} days`;
+  };
+  if (now < start - 30000) return `in ${span(now, start)}`;
+  if (end && now < end) return `started ${span(start, now)} ago, ${span(now, end)} left`;
   if (!end && now - start < 60000) return "now";
-  return `${end ? "ended " : ""}${span(now - (end ?? start))} ago`;
+  return `${end ? "ended " : ""}${span(end ?? start, now)} ago`;
 }
 
 // How many columns the zone cards sit in on a wide screen, so rows stay even:

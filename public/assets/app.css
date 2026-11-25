@@ -160,6 +160,8 @@ a:focus-visible {
 }
 .actions {
   display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
   gap: 8px;
 }
 
@@ -411,6 +413,15 @@ a:focus-visible {
   color: var(--text-medium);
   margin: 10px 0;
 }
+/* The length in use is the filled chip; the others are rings */
+.sheet .chip:not([aria-current]) {
+  background:
+    linear-gradient(var(--surface), var(--surface)) padding-box,
+    var(--fill) border-box;
+  border: 2px solid transparent;
+  line-height: 28px;
+  color: var(--text-high);
+}
 .sheet .btn {
   margin-top: 16px;
 }
@@ -470,6 +481,7 @@ a:focus-visible {
 }
 .fields label {
   display: grid;
+  align-content: start;
   gap: 4px;
   font-size: 13px;
   color: var(--text-medium);
@@ -480,6 +492,25 @@ a:focus-visible {
 }
 .f-zones {
   grid-column: span 4;
+  min-width: 0;
+}
+.fields .help,
+.copy-note {
+  font-size: 13px;
+  color: var(--text-medium);
+}
+.fields .help {
+  margin-top: 4px;
+}
+/* Shown only when a copy fails: what to do in its place */
+.copy-note:empty {
+  display: none;
+}
+.copy-note {
+  flex-basis: 100%;
+}
+.actions .copy-note {
+  text-align: right;
 }
 .f-date,
 .f-length,

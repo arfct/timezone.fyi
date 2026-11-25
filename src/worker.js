@@ -15,7 +15,7 @@ import { eventCard, homeCard, WIDTH } from "./render/card.js";
 import { eventPage, homePage } from "./render/page.js";
 
 // Part of every cached image's key. Raise it when the image's design changes.
-const CARD_VERSION = "6";
+const CARD_VERSION = "7";
 
 // The Display P3 chunk every image carries, built once per isolate
 let p3Chunk;
@@ -134,7 +134,11 @@ export default {
       if (model.suffix === "png") {
         return cardResponse(homeCard(), imageKey("home"), env, ctx, `public, max-age=${WEEK}`);
       }
-      if (model.suffix) return new Response("Not found", { status: 404 });
+      if (model.suffix === "ics")
+        return new Response("A calendar file needs a time and a time zone: /10am,nyc/event.ics", {
+          status: 404,
+        });
+      if (model.suffix) return new Response("The home image is /card.png", { status: 404 });
       return html(homePage(origin), 200, "public, max-age=3600");
     }
     if (model.kind === "error") return html(homePage(origin, model.message), 404, "no-store");

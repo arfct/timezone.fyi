@@ -109,7 +109,7 @@ expect(
 expect(
   "an impossible date is an error",
   read("/2026-02-30/10am,pst").error,
-  "2026-02-30 is not a date.",
+  "2026-02-30 isn't a date. February 2026 has 28 days.",
 );
 
 console.log("\nRelative dates redirect to the link with the date written out");
@@ -192,7 +192,7 @@ expect(
   iso(read("/monthly/2026-01-31/10am,nyc").start),
   "2026-12-31T15:00",
 );
-expect("monthly text", read("/monthly/2026-01-31/10am,nyc").recurText, "Monthly on the 31st");
+expect("monthly text", read("/monthly/2026-01-31/10am,nyc").recurText, "Every month on the 31st");
 expect("yearly", iso(read("/yearly/2020-12-03/10am,nyc").start), "2026-12-03T15:00");
 
 console.log("\nPaths for the image and the calendar file");
@@ -211,10 +211,27 @@ expect("a dot in the time: /10.30am,pst", times("/10.30am,pst"), "10:30am PST");
 expect("spaces in the zone list", times("/10am,pst,%20est"), "10am PST · 1pm EST");
 
 console.log("\nErrors");
-expect("no zones", parsePath("/10am").kind, "error");
-expect("an unknown zone", /is not a known zone/.test(read("/10am,xyz").error), true);
-expect("a broken escape", parsePath("/%E0%A4%A/10am,pst").kind, "error");
-expect("an offset past UTC+14", /not a UTC offset/.test(read("/10am,gmt+19").error), true);
+expect("no zones", parsePath("/10am").message, "Add a time zone after the time: /10am,nyc");
+expect(
+  "an unknown zone",
+  read("/10am,xyz").error,
+  '"xyz" isn\'t a time zone, city or airport. Try nyc, lhr or Europe/Paris.',
+);
+expect(
+  "a month past 12",
+  read("/2026-13-01/10am,pst").error,
+  "2026-13-01 isn't a date. Months go from 01 to 12.",
+);
+expect(
+  "a broken escape",
+  parsePath("/%E0%A4%A/10am,pst").message,
+  'The address has a stray "%". Remove it, or write %25 for a percent sign.',
+);
+expect(
+  "an offset past UTC+14",
+  read("/10am,gmt+19").error,
+  '"gmt+19" isn\'t a UTC offset. Offsets go up to 14 hours: gmt+14.',
+);
 
 console.log("\nThe one change to an old reading: a label that is a date or repeat word");
 expect(

@@ -13,7 +13,7 @@ What changes for a person using it:
 - A link can name a day: `/team-sync/2026-12-03/10am,nyc,lon`. Typing `fri`, `tomorrow` or `dec3` redirects to the link with the date written out.
 - A repeating event (`/standup/weekly/2026-03-02/9:30am+15m,nyc,lon`) stays at 9:30 in New York across clock changes, on the page and in the calendar.
 - A time typed in 24-hour form is shown in 24-hour form (issue #27).
-- The page adds the viewer's own zone and a line such as "in 3h 12m". The live clock ticks in the browser.
+- The page adds the viewer's own zone and a line such as "in 3 h 12 min". The live clock ticks in the browser.
 - The link-preview image uses Inter and has no missing-glyph boxes. The live site's image for `/10am,nyc,lon,tok`, fetched today, shows boxes in place of every character (`before-og-3zones.jpg` in the screenshots).
 
 What changes underneath: time zone arithmetic uses the runtime's `Intl` data in place of `timezonecomplete` and `tzdata`; the image is an SVG turned into a PNG by the existing `og-svg` Worker in place of node-canvas; the page makes no request to another site.
@@ -94,7 +94,7 @@ Freshness, measured on the deployed Worker at `/_/runtime` today: 418 zones; `Am
 Rules that keep a shared link meaning one thing:
 
 - **Relative words never stay in a link.** `/launch/fri/10am,nyc` answers 302 to `/launch/2026-11-27/10am,nyc`. The person copying the link from the address bar copies the dated one.
-- **An undated link still means today,** as on the live site. The page labels it "Today", and offers "Pin this date", which is the same link with today's date in it.
+- **An undated link still means today,** as on the live site. The page labels it "Today", and offers "Link to this date", which is the same link with today's date in it.
 - **A repeating event shows its next occurrence.** One still running counts as next.
 - **A clock time that does not exist** (02:30 on the night clocks go forward) moves forward by the size of the gap. One that happens twice is the first.
 
@@ -157,17 +157,17 @@ Screenshots, before and after: see the previewer link in the report that came wi
 - Gradients run at 135° (top-left to bottom-right), on the page and in the image; `diagonal()` in `src/render/card.js` reproduces CSS's 135deg geometry in SVG so the two match.
 - Buttons and chips take their colours from the nearest stripe: the Worker sets the last zone's colours on the page, and `app.js` gives each button the stripe closest to it (on the home page, the hour above it), again whenever the layout changes. A primary button is filled with the gradient; a secondary one is a ring of it. Without either, Quantum's blue.
 - No footer on event pages: the stripes run to the bottom of the window, and the only mark is `timezone.fyi` in the last stripe's corner, as in the image.
-- The header carries the label, the date line, and "in 3h 12m" / "started 5m ago, 25m left" / "ended 1h ago", computed in the browser.
+- The header carries the label, the date line, and "in 3 h 12 min" / "started 5 min ago, 25 min left" / "ended 1 h ago", computed in the browser. From 48 hours it counts calendar days in the viewer's zone ("in 8 days").
 - The viewer's own zone is added by the page script as a last card marked "Your zone", unless a listed zone already has the same offset at that moment.
 - A live clock (`now`, or zones alone) is drawn by the Worker for the request's minute and then kept current by the browser with `Intl`. It makes no further requests.
 - Light and dark follow the system setting. The neutral and blue values are Quantum's tokens.
-- The landing page has a builder: time, places, date, length, repeat and name fields, quick-add zone chips, and the link written out with Open and Copy buttons. Below it, the grammar and examples.
+- The landing page has the tagline ("Share your time with friends across zones.") and a builder: time, time zones, date, length, repeat and name fields, quick-add zone chips, and the link written out with a Copy link button. Below it, the grammar and examples.
 
 **Link-preview image** (1200×630 PNG)
 
 - Inter Medium for all text, sent to og-svg with each render (Inter stands in for the system font, which can't be bundled). Inter's contextual alternates centre the colon. Text is fitted with the font's advance widths (`src/fonts/inter-metrics.json`) so nothing overflows a column, and every cell uses the same time size so the times line up.
 - am/pm is one lowercase letter at half size, as on the page. Titles, `og:title` and calendar text keep `am`/`pm` in full. `test/render.test.js` checks that every character in eight sample cards and the home card is in the font, and that characters the font lacks (CJK in a label) are dropped before drawing.
-- 1 to 4 zones are columns; 5 to 8 are two rows; more than 8 shows 7 and "+N more". A labelled or dated event gets a dark band with the label and date. The day marker is spelled out ("Thu 26 Nov (+1)"). The home image is the 24 hours of stripes with the name set on them, no panel behind it.
+- 1 to 4 zones are columns; 5 to 8 are two rows; more than 8 shows 7 and "+N more". A labelled or dated event gets a dark band with the label and date. The day marker is spelled out ("Thu 26 Nov (+1)"). The home image is the 24 hours of stripes with the name and the tagline set on them, no panel behind it.
 
 **Not done:** an LCD or "clock face" style; the analogue clock icon the old page showed above each zone; any motion.
 
@@ -265,7 +265,7 @@ B becomes worth revisiting if the two sites start sharing server-side state. Nei
 
 | Feature | From → to | How | Status |
 | --- | --- | --- | --- |
-| Server-time sync | clock.app → timezone.fyi | timezone.fyi's "in 3h 12m" line and live clock trust the device clock. clock.app's `sync.js` and an `X-Server-Time` endpoint would correct it. Each sample is one Worker request, so sync on load only | proposed, not built |
+| Server-time sync | clock.app → timezone.fyi | timezone.fyi's "in 3 h 12 min" line and live clock trust the device clock. clock.app's `sync.js` and an `X-Server-Time` endpoint would correct it. Each sample is one Worker request, so sync on load only | proposed, not built |
 | Zone arithmetic for `?tz=` | timezone.fyi → clock.app | `src/lib/tz.js` has no imports and runs in a browser; `zone-lookup.js` would let `?tz=nyc` work, at the cost of the 262 KB airport map unless only abbreviations and aliases are taken | proposed |
 | "Count down to this" | timezone.fyi → clock.app | a link on a dated event's page to `clock.app/timer?end=<UTC instant>&label=<label>`. The instant is already on the page | blocked on clock.app #13: `/timer` does not exist yet, so the prototype has no such link |
 | "Show this in other zones" | clock.app → timezone.fyi | from `/timer?end=` or `/room`, a link to `timezone.fyi/<label>/<date>/<time>,utc` | proposed; clock.app #13, #14 |

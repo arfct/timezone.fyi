@@ -117,7 +117,10 @@ export function parsePath(pathname) {
   try {
     path = decodeURIComponent(pathname);
   } catch {
-    return { kind: "error", message: "The address has an invalid % escape." };
+    return {
+      kind: "error",
+      message: 'The address has a stray "%". Remove it, or write %25 for a percent sign.',
+    };
   }
   path = path.replace(/^\/+/, "");
 
@@ -157,7 +160,7 @@ export function parsePath(pathname) {
   if (!zones.length) {
     return {
       kind: "error",
-      message: `Add a zone after the time: /${path},nyc`,
+      message: `Add a time zone after the time: /${path},nyc`,
     };
   }
 
@@ -206,7 +209,7 @@ export function parsePath(pathname) {
   if (!time)
     return {
       kind: "error",
-      message: `"${timeSegment}" is not a time. Examples: 10am, 14:00, 9-5.`,
+      message: `"${timeSegment}" isn't a time. Try 10am, 14:00 or 9-5.`,
     };
   if (time.end !== undefined || !model.duration) delete model.duration;
   model.time = time;
