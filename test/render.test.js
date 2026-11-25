@@ -235,3 +235,30 @@ expect(
   /<a class="mark" href="\/">timezone.fyi<\/a>/.test(striped),
   true,
 );
+
+console.log("\nDiagonal gradients and button colours");
+const { diagonal } = await import("../src/render/card.js");
+// CSS 135deg over a 200×100 box at the origin: the line runs through (100, 50)
+// and is (200 + 100)/√2 long, so its ends are 75 px either way on each axis
+expect(
+  "the image's gradient has CSS 135deg geometry",
+  /x1="25.0" y1="-25.0" x2="175.0" y2="125.0"/.test(diagonal("t", 0, 0, 200, 100, "#000", "#fff")),
+  true,
+);
+expect(
+  "every image cell's gradient is diagonal",
+  /x1="0" y1="0" x2="0" y2="1"/.test(eventCard(read("/2026-12-03/10am,nyc,lon"))),
+  false,
+);
+expect(
+  "no vertical gradients left in the stylesheet",
+  /linear-gradient\(to bottom/.test(css),
+  false,
+);
+const twoZones = page("/2026-12-03/10am,nyc,tok");
+expect(
+  "buttons start with the last zone's colours",
+  twoZones.includes(`<body class="event" style="--top:${skyAt(24 * 60).top}`),
+  true,
+);
+expect("a stripe names the text colour that reads on it", /--on:#ffffff/.test(twoZones), true);

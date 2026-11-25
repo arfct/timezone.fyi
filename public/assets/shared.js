@@ -277,8 +277,11 @@ function timeHtml(minutes, h24) {
 }
 
 // The custom properties that paint a stripe: sRGB, and P3 where it's supported
+// and --on, the text colour that reads on it
 export const skyStyle = (s) =>
-  `--top:${s.top};--bottom:${s.bottom};--top-p3:${s.topP3};--bottom-p3:${s.bottomP3}`;
+  `--top:${s.top};--bottom:${s.bottom};--top-p3:${s.topP3};--bottom-p3:${s.bottomP3};--on:${s.dark ? "#ffffff" : INK}`;
+
+const INK = "#0d1117";
 
 // One zone's card. The Worker renders these; the browser re-renders them for a
 // live clock and adds one for the viewer's own zone.

@@ -21,6 +21,21 @@ const xml = (text) =>
     (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c],
   );
 
+// A gradient across a box at 135°, from the top-left corner to the bottom-
+// right, with the same geometry as CSS's linear-gradient(135deg, …) so the
+// image and the page match: the line runs through the centre, and its ends
+// are where the lines through the corners at right angles to it cross it.
+export function diagonal(id, x, y, w, h, top, bottom) {
+  const half = (w + h) / 4; // (w·sin45° + h·cos45°) / 2, along a unit (½√2, ½√2)
+  const cx = x + w / 2;
+  const cy = y + h / 2;
+  const f = (n) => n.toFixed(1);
+  return (
+    `<linearGradient id="${id}" gradientUnits="userSpaceOnUse" x1="${f(cx - half)}" y1="${f(cy - half)}" x2="${f(cx + half)}" y2="${f(cy + half)}">` +
+    `<stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>`
+  );
+}
+
 // Width of `text` in Inter at `weight` (500 or 700) and `size` px
 export function textWidth(text, weight, size) {
   let em = 0;
@@ -119,8 +134,7 @@ function cell(z, event, i, x, y, w, h, shared) {
   const noteBaseline = timeBaseline(rows.length - 1) + gap * 0.92 + noteSize * CAP;
   const cx = (x + w / 2).toFixed(1);
   return [
-    `<linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.topP3Hex}"/>` +
-      `<stop offset="1" stop-color="${sky.bottomP3Hex}"/></linearGradient>`,
+    diagonal(`g${i}`, x, y, w, h, sky.topP3Hex, sky.bottomP3Hex),
     `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(w + 0.5).toFixed(1)}" height="${(h + 0.5).toFixed(1)}" fill="url(#g${i})"/>`,
     `<g fill="${ink}" text-anchor="middle" font-family="Inter">`,
     `<text x="${cx}" y="${nameBaseline.toFixed(1)}" font-size="${nameSize.toFixed(1)}" font-weight="500" fill-opacity="0.74" letter-spacing="${(nameSize * 0.04).toFixed(1)}">${xml(lines.name)}</text>`,
@@ -246,7 +260,7 @@ export function homeCard() {
   const stripes = SKY.map((_, i) => skyAt(i * 60))
     .map(
       (sky, i) =>
-        `<linearGradient id="h${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.topP3Hex}"/><stop offset="1" stop-color="${sky.bottomP3Hex}"/></linearGradient>` +
+        diagonal(`h${i}`, i * w, 0, w, HEIGHT, sky.topP3Hex, sky.bottomP3Hex) +
         `<rect x="${i * w}" width="${w + 0.5}" height="${HEIGHT}" fill="url(#h${i})"/>`,
     )
     .join("");

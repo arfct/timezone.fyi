@@ -26,6 +26,7 @@ function document({
   image,
   imageAlt,
   bodyClass = "",
+  bodyStyle = "",
   body,
   extraHead = "",
 }) {
@@ -59,7 +60,7 @@ function document({
 <link rel="stylesheet" href="/assets/app.css">
 <script type="module" src="/assets/app.js"></script>${extraHead}
 </head>
-<body class="${bodyClass}">
+<body class="${bodyClass}"${bodyStyle ? ` style="${bodyStyle}"` : ""}>
 ${body}
 </body>
 </html>
@@ -194,6 +195,9 @@ ${event.live ? "" : calendarPanel(event, origin)}
     image,
     imageAlt: `${label ? `${label}: ` : ""}${event.timesText}`,
     bodyClass: event.live ? "live" : "event",
+    // Until app.js matches each button to its nearest stripe, they take the
+    // last zone's colours: the stripe under the top-right corner
+    bodyStyle: skyStyle(skyAt(event.zones[event.zones.length - 1].minutes)),
     body,
     extraHead,
   });
@@ -263,6 +267,8 @@ ${examples}
     image: `${origin}/card.png`,
     imageAlt: `${SITE}: ${TAGLINE}`,
     bodyClass: "landing",
+    // Mid-morning sky until app.js matches each button to its nearest stripe
+    bodyStyle: skyStyle(skyAt(9 * 60)),
     body,
   });
 }

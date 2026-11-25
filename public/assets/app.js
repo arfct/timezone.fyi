@@ -205,6 +205,52 @@ function colonLift() {
     document.documentElement.style.setProperty("--colon-lift", lift.toFixed(3));
 }
 
+// Each button and chip takes the colours of the stripe of sky nearest to it:
+// the zone beside or under it on an event page, the hour above it on the home
+// page. Matched again when the layout changes.
+const SKY_VARS = ["--top", "--bottom", "--top-p3", "--bottom-p3", "--on"];
+function paintButtons() {
+  const skies = [...document.querySelectorAll(".zone, .strip i")].map((el) => ({
+    el,
+    box: el.getBoundingClientRect(),
+  }));
+  if (!skies.length) return;
+  for (const button of document.querySelectorAll(".btn, .chip")) {
+    const b = button.getBoundingClientRect();
+    if (!b.width) continue;
+    const cx = b.left + b.width / 2;
+    const cy = b.top + b.height / 2;
+    let best;
+    let bestScore = Infinity;
+    for (const s of skies) {
+      // Distance from the button's centre to the stripe's box, then how far
+      // the centres sit apart sideways, to choose between stripes at an equal
+      // distance (the home page's hours all sit the same height above)
+      const dx = Math.max(s.box.left - cx, 0, cx - s.box.right);
+      const dy = Math.max(s.box.top - cy, 0, cy - s.box.bottom);
+      const score = Math.hypot(dx, dy) * 1000 + Math.abs(s.box.left + s.box.width / 2 - cx);
+      if (score < bestScore) {
+        bestScore = score;
+        best = s.el;
+      }
+    }
+    const from = best.style;
+    for (const v of SKY_VARS) button.style.setProperty(v, from.getPropertyValue(v));
+  }
+}
+let paintQueued = false;
+function queuePaint() {
+  if (paintQueued) return;
+  paintQueued = true;
+  requestAnimationFrame(() => {
+    paintQueued = false;
+    paintButtons();
+  });
+}
+new ResizeObserver(queuePaint).observe(document.body);
+new MutationObserver(queuePaint).observe(document.body, { childList: true, subtree: true });
+document.addEventListener("toggle", queuePaint, true);
+
 colonLift();
 const data = document.getElementById("event");
 if (data) eventPage(JSON.parse(data.textContent));
