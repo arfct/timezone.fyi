@@ -223,13 +223,18 @@ export function homePage(origin, error) {
       `<li><a href="${e(path)}"><code>${e(path)}</code></a><span>${e(what)}</span></li>`,
   ).join("\n");
   const host = origin.replace(/^https?:\/\//, "");
-  const body = `<main class="home">
+  const body = `<header class="top home-top">
+<nav class="actions">
+<button class="btn primary" popovertarget="builder">Make a link</button>
+</nav>
+</header>
+<main class="home">
 <header class="hero">
 <div class="strip">${strip}<h1>${SITE}</h1></div>
 <p class="lede">${TAGLINE}</p>
 </header>
 ${error ? `<p class="error" role="alert">${e(error)}</p>` : ""}
-<section class="builder" id="builder" data-host="${e(host)}">
+<div class="sheet builder" id="builder" popover data-host="${e(host)}">
 <h2>Make a link</h2>
 <div class="fields">
 <label class="f-time">Time<input id="b-time" value="10:30am" autocomplete="off" spellcheck="false" placeholder="10:30am"></label>
@@ -242,9 +247,10 @@ ${error ? `<p class="error" role="alert">${e(error)}</p>` : ""}
 <p class="chips" id="b-chips"><button type="button" class="chip" data-zone="mine">Your zone</button>${["pst", "est", "utc", "lon", "par", "ist", "sin", "tok", "syd"].map((z) => `<button type="button" class="chip" data-zone="${z}">${z.toUpperCase()}</button>`).join("")}</p>
 <div class="result">
 <a id="b-link" class="link" href="/10:30am,pst,nyc,lon">${e(host)}/10:30am,pst,nyc,lon</a>
-<button type="button" class="btn primary" id="copy" data-url="${e(origin)}/10:30am,pst,nyc,lon">Copy link</button>
+<button type="button" class="btn" id="copy" data-url="${e(origin)}/10:30am,pst,nyc,lon">Copy link</button>
 </div>
-</section>
+<button class="btn" popovertarget="builder" popovertargetaction="hide">Close</button>
+</div>
 <section class="guide">
 <h2>Link format</h2>
 <ul class="examples">

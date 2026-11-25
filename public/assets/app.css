@@ -62,34 +62,45 @@ code {
   font-size: 0.92em;
 }
 
-/* Buttons and chips take their fill from the nearest stripe of sky: the
-   Worker sets the last zone's colours on the page, and app.js gives each
-   button the colours of the stripe closest to it. Without either, Quantum's
+/* Buttons and chips are text colour. The only coloured ones are the
+   buttons above the stripes (.top), which take the gradient of the stripe
+   nearest them: the Worker sets the last zone's colours on the page, and
+   app.js matches each one to its nearest stripe. Without either, Quantum's
    blue. */
 .btn,
 .chip {
-  --fill: linear-gradient(
-    135deg,
-    var(--top, var(--primary-fill)),
-    var(--bottom, var(--primary-fill))
-  );
-  border: 0;
-  background: var(--fill);
-  color: var(--on, #ffffff);
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--text-high);
   cursor: pointer;
   text-decoration: none;
   white-space: nowrap;
 }
 .btn {
-  font: 500 14px / 36px var(--font);
+  font: 500 14px / 34px var(--font);
   letter-spacing: 0.01em;
   height: 36px;
   padding: 0 16px;
   border-radius: 18px;
   display: inline-block;
 }
-/* The secondary button is the same colour, quieter: a ring of it */
-.btn:not(.primary) {
+.btn:hover,
+.chip:hover {
+  background: var(--field);
+}
+.top .btn {
+  --fill: linear-gradient(
+    135deg,
+    var(--top, var(--primary-fill)),
+    var(--bottom, var(--primary-fill))
+  );
+  border: 0;
+  line-height: 36px;
+  background: var(--fill);
+  color: var(--on, #ffffff);
+}
+/* The secondary button above the stripes is a ring of the same colour */
+.top .btn:not(.primary) {
   background:
     linear-gradient(var(--background), var(--background)) padding-box,
     var(--fill) border-box;
@@ -97,8 +108,7 @@ code {
   line-height: 32px;
   color: var(--text-high);
 }
-.btn:hover,
-.chip:hover {
+.top .btn:hover {
   filter: brightness(1.06) saturate(1.1);
 }
 .btn:focus-visible,
@@ -116,7 +126,7 @@ a:focus-visible {
   gap: 8px;
 }
 .chip {
-  font: 500 14px / 32px var(--font);
+  font: 500 14px / 30px var(--font);
   height: 32px;
   padding: 0 12px;
   border-radius: 16px;
@@ -413,24 +423,35 @@ a:focus-visible {
   color: var(--text-medium);
   margin: 10px 0;
 }
-/* The length in use is the filled chip; the others are rings */
-.sheet .chip:not([aria-current]) {
-  background:
-    linear-gradient(var(--surface), var(--surface)) padding-box,
-    var(--fill) border-box;
-  border: 2px solid transparent;
-  line-height: 28px;
-  color: var(--text-high);
+/* The length in use is the filled chip */
+.sheet .chip[aria-current] {
+  background: var(--text-high);
+  border-color: var(--text-high);
+  color: var(--surface);
 }
 .sheet .btn {
   margin-top: 16px;
+}
+/* "Make a link" is the same kind of dialog, wider for its fields */
+.sheet.builder {
+  width: min(680px, calc(100vw - 24px));
+}
+.sheet.builder h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 16px;
 }
 
 /* Home page */
 .home {
   width: min(820px, 100%);
   margin: 0 auto;
-  padding: 40px 20px 24px;
+  padding: 0 20px 24px;
+}
+/* The home page's bar above the stripes holds only "Make a link" */
+.home-top {
+  justify-content: flex-end;
+  padding: 14px 20px;
 }
 /* The home page's stripes are the home link preview: 24 hours of sky, with
    the name set straight on them */
@@ -454,7 +475,7 @@ a:focus-visible {
 }
 .strip {
   position: relative;
-  margin: -40px calc(50% - 50vw) 0;
+  margin: 0 calc(50% - 50vw);
   display: grid;
   grid-template-columns: repeat(24, 1fr);
   grid-template-rows: clamp(150px, 26vw, 220px);
@@ -591,12 +612,6 @@ a:focus-visible {
   justify-content: space-between;
 }
 @media (max-width: 640px) {
-  .home {
-    padding-top: 28px;
-  }
-  .strip {
-    margin-top: -28px;
-  }
   .f-time,
   .f-zones,
   .f-label {
@@ -627,8 +642,7 @@ a:focus-visible {
   .strip i {
     background: linear-gradient(135deg, var(--top-p3), var(--bottom-p3));
   }
-  .btn,
-  .chip {
+  .top .btn {
     --fill: linear-gradient(
       135deg,
       var(--top-p3, var(--primary-fill)),

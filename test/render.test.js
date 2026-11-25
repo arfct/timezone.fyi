@@ -304,3 +304,42 @@ expect(
   true,
 );
 expect("a stripe names the text colour that reads on it", /--on:#ffffff/.test(twoZones), true);
+
+console.log("\nMake a link is a dialog, and only the bar above the stripes is coloured");
+const homeHtml = homePage(ORIGIN);
+expect(
+  "the builder is a popover",
+  /<div class="sheet builder" id="builder" popover/.test(homeHtml),
+  true,
+);
+expect(
+  "the bar above the stripes opens it",
+  /<header class="top home-top">[\s\S]*popovertarget="builder">Make a link<\/button>[\s\S]*<\/header>\s*<main class="home">/.test(
+    homeHtml,
+  ),
+  true,
+);
+expect(
+  "the dialog can be closed",
+  /popovertarget="builder" popovertargetaction="hide">Close</.test(homeHtml),
+  true,
+);
+const styles = readFileSync(new URL("../public/assets/app.css", import.meta.url), "utf8");
+const baseRule = styles.match(/\n\.btn,\n\.chip \{[^}]*\}/)?.[0] ?? "";
+expect(
+  "plain buttons and chips are text colour",
+  /color: var\(--text-high\)/.test(baseRule) && !/--fill|var\(--top/.test(baseRule),
+  true,
+);
+expect(
+  "the gradient is only on buttons in .top",
+  (styles.match(/var\(--top[,)]/g) ?? []).length > 0 &&
+    !/^\.(btn|chip)[^{]*\{[^}]*var\(--top/m.test(styles),
+  true,
+);
+const appJs = readFileSync(new URL("../public/assets/app.js", import.meta.url), "utf8");
+expect(
+  "the script colours only buttons in .top",
+  /querySelectorAll\("\.top \.btn"\)/.test(appJs),
+  true,
+);

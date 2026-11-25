@@ -213,9 +213,9 @@ function colonLift() {
     document.documentElement.style.setProperty("--colon-lift", lift.toFixed(3));
 }
 
-// Each button and chip takes the colours of the stripe of sky nearest to it:
-// the zone beside or under it on an event page, the hour above it on the home
-// page. Matched again when the layout changes.
+// Each button above the stripes takes the colours of the stripe nearest to
+// it: the zone under it on an event page, the hour under it on the home page.
+// Matched again when the layout changes. Every other button is text colour.
 const SKY_VARS = ["--top", "--bottom", "--top-p3", "--bottom-p3", "--on"];
 function paintButtons() {
   const skies = [...document.querySelectorAll(".zone, .strip i")].map((el) => ({
@@ -223,7 +223,7 @@ function paintButtons() {
     box: el.getBoundingClientRect(),
   }));
   if (!skies.length) return;
-  for (const button of document.querySelectorAll(".btn, .chip")) {
+  for (const button of document.querySelectorAll(".top .btn")) {
     const b = button.getBoundingClientRect();
     if (!b.width) continue;
     const cx = b.left + b.width / 2;
