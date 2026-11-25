@@ -188,6 +188,24 @@ function builder(root) {
   update();
 }
 
+// How far the system font's colon has to rise to centre on its digits, in em.
+// Fonts differ (San Francisco 0.112, others less or none), so it's measured.
+function colonLift() {
+  const zone = document.querySelector(".zone .time");
+  if (!zone) return;
+  const style = getComputedStyle(zone);
+  const ctx = document.createElement("canvas").getContext("2d");
+  ctx.font = `${style.fontWeight} 1000px ${style.fontFamily}`;
+  const middle = (t) => {
+    const m = ctx.measureText(t);
+    return (m.actualBoundingBoxAscent - m.actualBoundingBoxDescent) / 2;
+  };
+  const lift = (middle("0") - middle(":")) / 1000;
+  if (Number.isFinite(lift) && Math.abs(lift) < 0.3)
+    document.documentElement.style.setProperty("--colon-lift", lift.toFixed(3));
+}
+
+colonLift();
 const data = document.getElementById("event");
 if (data) eventPage(JSON.parse(data.textContent));
 copyButton();

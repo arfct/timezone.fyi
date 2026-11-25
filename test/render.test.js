@@ -178,3 +178,19 @@ expect(
   "started 5m ago, 25m left",
 );
 expect("over", relativeText(NOW - 2 * H, NOW - H, NOW), "ended 1h ago");
+
+console.log("\nHow a time is drawn");
+const shown = page("/2026-12-03/10:30am-1pm,nyc");
+expect(
+  "the page writes am/pm as one letter, set close",
+  /<span class="digits">10<span class="colon">:<\/span>30<\/span><span class="ap">a<\/span>/.test(
+    shown,
+  ),
+  true,
+);
+expect("…and pm as p", /<span class="ap">p<\/span>/.test(shown), true);
+expect("the title keeps am/pm in full", /<title>[^<]*10:30am/.test(shown), true);
+const drawn = eventCard(read("/2026-12-03/10:30pm,nyc"));
+expect("the image writes pm as p", /font-weight="500"[^>]*>p<\/tspan>/.test(drawn), true);
+expect("the image has no AM or PM", /\b[AP]M\b/.test(drawn), false);
+expect("the home image has no panel behind the name", /<rect[^>]* rx=/.test(homeCard()), false);

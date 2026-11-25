@@ -64,7 +64,7 @@ export function skyAt(minutes) {
 const pad2 = (n) => String(n).padStart(2, "0");
 
 // in: minutes after midnight; h24 for 24-hour form
-// out: { digits, suffix }: "10:30" + "am", "10" + "am" (":00" dropped), or
+// out: { digits, suffix }: "10:30" + "am", "10" + "pm" (":00" dropped), or
 //      "22:30" + "" (24-hour keeps its minutes and pads the hour)
 export function clock(minutes, h24) {
   const m = ((minutes % 1440) + 1440) % 1440;
@@ -77,7 +77,7 @@ export function clock(minutes, h24) {
   };
 }
 
-// "10:30am", "22:30"
+// "10:30am", "22:30": for titles and calendar text
 export function clockText(minutes, h24) {
   const c = clock(minutes, h24);
   return c.digits + c.suffix;
@@ -148,9 +148,12 @@ export function columnsFor(count) {
 const ENTITIES = { "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" };
 export const escapeHtml = (s) => String(s).replace(/[&<>"']/g, (c) => ENTITIES[c]);
 
+// On the page am/pm is one letter, "10:30a". The colon is its own element so it can sit centred on the digits, as a
+// clock's does, whatever the font puts there by default.
 function timeHtml(minutes, h24) {
   const c = clock(minutes, h24);
-  return `<span class="digits">${c.digits}</span>${c.suffix ? `<span class="ap">${c.suffix.toUpperCase()}</span>` : ""}`;
+  const digits = c.digits.replace(":", '<span class="colon">:</span>');
+  return `<span class="digits">${digits}</span>${c.suffix ? `<span class="ap">${c.suffix[0]}</span>` : ""}`;
 }
 
 // One zone's card. The Worker renders these; the browser re-renders them for a
@@ -165,16 +168,15 @@ export function zoneCard(z, h24) {
   // A range on one day carries its day marker once, after the end
   const startDay = range && z.dayOffset === z.endDayOffset ? "" : day(z.dayOffset);
   const time = range
-    ? `${timeHtml(z.minutes, h24)}${startDay}<span class="dash">–</span>${timeHtml(z.endMinutes, h24)}${day(z.endDayOffset)}`
+    ? `<span class="from">${timeHtml(z.minutes, h24)}${startDay}<span class="dash">–</span></span><span class="to">${timeHtml(z.endMinutes, h24)}${day(z.endDayOffset)}</span>`
     : `${timeHtml(z.minutes, h24)}${day(z.dayOffset)}`;
   const notes = [];
   if (z.you) notes.push("<b>Your zone</b>");
   if (z.dayOffset && z.dayText) notes.push(`<b>${escapeHtml(z.dayText)}</b>`);
-  if (z.place) notes.push(escapeHtml(z.place));
   notes.push(offsetText(z.offset));
   return (
     `<article class="zone${sky.dark ? " dark" : ""}${range ? " range" : ""}${z.you ? " you" : ""}" style="--top:${sky.top};--bottom:${sky.bottom}">` +
-    `<h2 class="name">${escapeHtml(z.name)}</h2>` +
+    `<h2 class="name"${z.place ? ` title="${escapeHtml(z.place)}"` : ""}>${escapeHtml(z.name)}</h2>` +
     `<p class="time">${time}</p>` +
     `<p class="note">${notes.join(" · ")}</p>` +
     `</article>`

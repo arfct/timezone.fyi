@@ -212,9 +212,8 @@ export function homePage(origin, error) {
   const host = origin.replace(/^https?:\/\//, "");
   const body = `<main class="home">
 <header class="hero">
-<h1>${SITE}</h1>
+<div class="strip">${strip}<h1>${SITE}</h1></div>
 <p class="lede">${TAGLINE}. Type a time and some places into the address, and send the link. Chat apps show the times in the preview.</p>
-<div class="strip" aria-hidden="true">${strip}</div>
 </header>
 ${error ? `<p class="error" role="alert">${e(error)}</p>` : ""}
 <section class="builder" id="builder" data-host="${e(host)}">

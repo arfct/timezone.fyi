@@ -45,11 +45,14 @@ function tspans(pieces, size) {
     .join("");
 }
 
-// "10:30" + small "AM"; 24-hour times have no suffix
+// "10:30" + a small "a", set close; 24-hour times have no suffix. Times are
+// Inter Medium, whose contextual alternates centre the colon on the digits.
+const TIME_WEIGHT = 500;
 function timePieces(minutes, h24) {
   const c = clock(minutes, h24);
-  const pieces = [{ text: c.digits }];
-  if (c.suffix) pieces.push({ text: c.suffix.toUpperCase(), scale: 0.46, opacity: 0.8, dx: 0.07 });
+  const pieces = [{ text: c.digits, weight: TIME_WEIGHT }];
+  if (c.suffix)
+    pieces.push({ text: c.suffix[0], scale: 0.5, weight: 500, opacity: 0.72, dx: 0.02 });
   return pieces;
 }
 
@@ -61,10 +64,10 @@ function cellLines(z, event) {
   let time = [start];
   if (z.endMinutes !== undefined) {
     const end = timePieces(z.endMinutes, event.h24);
-    // "10 – 11:30 AM": one suffix when both ends share it
+    // "10 – 11:30a": one suffix when both ends share it
     const shared = start[1] && end[1] && start[1].text === end[1].text;
-    time = [[...(shared ? [start[0]] : start), { text: " – ", weight: 500, opacity: 0.7 }, ...end]];
-    time.split = [[...start, { text: " –", weight: 500, opacity: 0.7 }], end];
+    time = [[...(shared ? [start[0]] : start), { text: " – ", weight: 500, opacity: 0.6 }, ...end]];
+    time.split = [[...start, { text: " –", weight: 500, opacity: 0.6 }], end];
   }
   const notes = [];
   if (z.dayOffset) notes.push(`${dateText(z.wall)} (${signed(z.dayOffset)})`);
@@ -73,21 +76,31 @@ function cellLines(z, event) {
   return { name: drawable(z.name), time, note: notes.join(" · ") };
 }
 
-function cell(z, event, i, x, y, w, h) {
-  const sky = skyAt(z.minutes);
-  const ink = sky.dark ? "#ffffff" : INK_DARK;
-  const lines = cellLines(z, event);
+// The largest time size that fits a cell `w` wide and `h` tall, and the rows
+// at that size: a range splits onto two rows when one would be too small.
+function fit(lines, w, h) {
   const inner = w * 0.84;
   const cap = Math.min(h * 0.36, 168);
-
   let rows = lines.time;
   let size = Math.min(cap, inner / piecesWidth(rows[0], 1));
   if (rows.split && size < cap * 0.62) {
     rows = rows.split;
     size = Math.min(cap * 0.8, inner / Math.max(...rows.map((r) => piecesWidth(r, 1))));
   }
-  const nameSize = Math.min(Math.max(size * 0.4, 30), 60, inner / textWidth(lines.name, 500, 1));
-  const noteSize = Math.min(Math.max(size * 0.26, 23), 34, inner / textWidth(lines.note, 500, 1));
+  return { rows, size };
+}
+
+// `shared` is the time, name and note sizes every cell in the row uses, so
+// the times line up across the image
+function cell(z, event, i, x, y, w, h, shared) {
+  const sky = skyAt(z.minutes);
+  const ink = sky.dark ? "#ffffff" : INK_DARK;
+  const lines = cellLines(z, event);
+  const inner = w * 0.84;
+  const { rows } = fit(lines, w, h);
+  const size = shared.size;
+  const nameSize = Math.min(shared.nameSize, inner / textWidth(lines.name, 500, 1));
+  const noteSize = Math.min(shared.noteSize, inner / textWidth(lines.note, 500, 1));
 
   // Stack: name, time row(s), note. Inter's capitals are 0.73 em tall.
   const CAP = 0.73;
@@ -143,12 +156,33 @@ export function eventCard(event) {
   const rowHeight = (HEIGHT - headerHeight) / rowCount;
 
   const parts = [];
-  zones.forEach((z, i) => {
+  const place = (i) => {
     const row = Math.floor(i / perRow);
     const inRow = row === rowCount - 1 ? count - perRow * row : perRow;
-    const w = WIDTH / inRow;
+    return { row, w: WIDTH / inRow };
+  };
+  // One time size for the whole image: the smallest any cell needs
+  const size = Math.min(
+    ...zones.map((z, i) => fit(cellLines(z, event), place(i).w, rowHeight).size),
+  );
+  const shared = {
+    size,
+    nameSize: Math.min(Math.max(size * 0.4, 30), 60),
+    noteSize: Math.min(Math.max(size * 0.26, 23), 34),
+  };
+  zones.forEach((z, i) => {
+    const { row, w } = place(i);
     parts.push(
-      cell(z, event, i, (i - row * perRow) * w, headerHeight + row * rowHeight, w, rowHeight),
+      cell(
+        z,
+        event,
+        i,
+        (i - row * perRow) * w,
+        headerHeight + row * rowHeight,
+        w,
+        rowHeight,
+        shared,
+      ),
     );
   });
   if (more) {
@@ -215,9 +249,11 @@ export function homeCard() {
   ).join("");
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">${stripes}` +
-    `<rect x="210" y="205" width="780" height="220" rx="28" fill="${HEADER_FILL}" fill-opacity="0.92"/>` +
-    `<g font-family="Inter" fill="#ffffff" text-anchor="middle">` +
+    // No panel behind the name: it sits on the stripes, with a soft shadow
+    // so it reads on the pale midday ones too
+    `<filter id="lift" x="-10%" y="-30%" width="120%" height="160%"><feDropShadow dx="0" dy="2" stdDeviation="10" flood-color="#000000" flood-opacity="0.35"/></filter>` +
+    `<g font-family="Inter" fill="#ffffff" text-anchor="middle" filter="url(#lift)">` +
     `<text x="600" y="312" font-size="84" font-weight="700">timezone.fyi</text>` +
-    `<text x="600" y="372" font-size="32" font-weight="500" fill-opacity="0.72">One link, the same moment in every zone</text></g></svg>`
+    `<text x="600" y="372" font-size="32" font-weight="500">One link, the same moment in every zone</text></g></svg>`
   );
 }

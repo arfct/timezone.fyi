@@ -14,7 +14,9 @@
   --scrim: rgba(0, 0, 0, 0.32);
   --error: #b00020;
   --ink: #0d1117;
-  --font: system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font:
+    -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
   --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
 }
 @media (prefers-color-scheme: dark) {
@@ -35,6 +37,7 @@
 }
 html {
   -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
 }
 body {
   margin: 0;
@@ -152,14 +155,14 @@ a:focus-visible {
   gap: 8px;
 }
 
+/* The zones are the link-preview image at page size: full-bleed vertical
+   stripes of the sky gradient, no gaps, no corners, type set straight on them. */
 .zones {
   flex: 1;
   display: grid;
   /* --cols comes from the number of zones (columnsFor in shared.js) */
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
   grid-auto-rows: 1fr;
-  gap: 12px;
-  padding: 0 16px 16px;
 }
 @media (min-width: 641px) and (max-width: 900px) {
   .zones.many {
@@ -170,74 +173,89 @@ a:focus-visible {
   container-type: inline-size;
   min-height: 190px;
   padding: 24px 16px;
-  border-radius: 24px;
   background: linear-gradient(to bottom, var(--top), var(--bottom));
   color: var(--ink);
   display: flex;
   flex-direction: column;
   align-items: center;
   justify-content: center;
-  gap: 14px;
+  gap: 0.6em;
   text-align: center;
-}
-@supports (corner-shape: squircle) {
-  .zone {
-    corner-shape: squircle;
-    border-radius: 44px;
-  }
 }
 .zone.dark {
   color: #ffffff;
 }
 .zone .name {
-  font-size: clamp(18px, 8.5cqi, 34px);
+  font-size: clamp(15px, 6cqi, 26px);
   font-weight: 500;
-  letter-spacing: 0.05em;
-  opacity: 0.76;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
 }
 .zone .time {
-  font-size: clamp(44px, 27cqi, 160px);
+  font-size: clamp(44px, 26cqi, 168px);
   line-height: 1;
-  font-weight: 700;
-  letter-spacing: -0.03em;
+  font-weight: 500;
+  letter-spacing: -0.035em;
   font-variant-numeric: tabular-nums;
   white-space: nowrap;
 }
+/* A range stacks its two ends, as the link preview does */
 .zone.range .time {
-  font-size: clamp(30px, 12cqi, 88px);
+  font-size: clamp(30px, 20cqi, 128px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.08em;
 }
+.zone.range .from {
+  font-size: 0.72em;
+  opacity: 0.85;
+}
+/* A clock's colon: centred on the digits, not sitting on the baseline.
+   --colon-lift is measured from the font in use by app.js; 0.112 em is
+   San Francisco's at weight 500. */
+.zone .colon {
+  display: inline-block;
+  transform: translateY(calc(-1em * var(--colon-lift, 0.112)));
+  margin: 0 0.01em;
+}
+/* am/pm as one letter, set close: "10:30a" */
 .zone .ap {
-  font-size: 0.44em;
+  font-size: 0.5em;
+  font-weight: 500;
   letter-spacing: 0;
-  margin-left: 0.1em;
-  opacity: 0.82;
+  margin-left: 0.04em;
+  opacity: 0.72;
 }
 .zone .dash {
   margin: 0 0.16em;
-  font-weight: 400;
-  opacity: 0.7;
+  font-weight: 300;
+  opacity: 0.6;
 }
 .zone .day {
-  font-size: 0.34em;
+  font-size: 0.3em;
+  font-weight: 500;
   letter-spacing: 0;
   margin-left: 0.12em;
-  vertical-align: 1.1em;
+  vertical-align: 1.2em;
   line-height: 0;
-  opacity: 0.9;
+  opacity: 0.8;
 }
 .zone .note {
-  font-size: clamp(14px, 5.2cqi, 20px);
-  opacity: 0.74;
+  font-size: clamp(13px, 4.4cqi, 17px);
+  letter-spacing: 0.01em;
+  opacity: 0.62;
+  font-variant-numeric: tabular-nums;
 }
 .zone .note b {
-  font-weight: 600;
+  font-weight: 500;
 }
 
 .foot {
   display: flex;
   flex-wrap: wrap;
   gap: 4px 20px;
-  padding: 4px 28px 20px;
+  padding: 14px 28px 18px;
   font-size: 14px;
   color: var(--text-medium);
 }
@@ -252,14 +270,22 @@ a:focus-visible {
   .top {
     padding: 20px 20px 16px;
   }
+  /* Up to three zones stay side by side as stripes; more stack as bands */
   .zones {
+    grid-template-columns: repeat(min(var(--cols, 3), 3), minmax(0, 1fr));
+  }
+  .zones.many {
     grid-template-columns: 1fr;
-    gap: 10px;
-    padding: 0 10px 12px;
   }
   .zone {
-    min-height: 112px;
-    padding: 16px 22px;
+    padding: 20px 8px;
+  }
+  .zone .time {
+    font-size: clamp(30px, 30cqi, 64px);
+  }
+  .zones.many .zone {
+    min-height: 104px;
+    padding: 14px 22px;
     display: grid;
     grid-template-columns: 1fr auto;
     grid-template-areas: "name time" "note time";
@@ -267,25 +293,33 @@ a:focus-visible {
     gap: 2px 12px;
     text-align: left;
   }
-  .zone .name {
+  .zones.many .zone .name {
     grid-area: name;
     align-self: end;
-    font-size: 22px;
+    font-size: 17px;
   }
-  .zone .note {
+  .zones.many .zone .note {
     grid-area: note;
     align-self: start;
-    font-size: 14px;
+    font-size: 13px;
   }
-  .zone .time {
+  .zones.many .zone .time {
     grid-area: time;
-    font-size: clamp(40px, 15cqi, 60px);
+    font-size: clamp(40px, 14cqi, 56px);
   }
   .zone.range .time {
-    font-size: clamp(22px, 7.6cqi, 34px);
+    font-size: clamp(26px, 22cqi, 52px);
+  }
+  .zones.many .zone.range .time {
+    display: block;
+    font-size: clamp(20px, 7.6cqi, 34px);
+  }
+  .zones.many .zone.range .from {
+    font-size: 1em;
+    opacity: 1;
   }
   .foot {
-    padding: 4px 20px 16px;
+    padding: 10px 20px 16px;
     justify-content: space-between;
   }
   .foot span {
@@ -350,25 +384,32 @@ a:focus-visible {
   margin: 0 auto;
   padding: 40px 20px 24px;
 }
+/* The home page's stripes are the home link preview: 24 hours of sky, with
+   the name set straight on them */
 .hero h1 {
-  font-size: clamp(40px, 8vw, 64px);
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(40px, 9vw, 72px);
   line-height: 1.05;
-  font-weight: 700;
+  font-weight: 600;
   letter-spacing: -0.03em;
+  color: #ffffff;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
 }
 .lede {
-  margin-top: 12px;
+  margin-top: 20px;
   font-size: 19px;
   color: var(--text-medium);
   max-width: 34em;
 }
 .strip {
+  position: relative;
+  margin: -40px calc(50% - 50vw) 0;
   display: grid;
   grid-template-columns: repeat(24, 1fr);
-  height: 56px;
-  margin-top: 28px;
-  border-radius: 14px;
-  overflow: hidden;
+  grid-template-rows: clamp(150px, 26vw, 220px);
 }
 .strip i {
   background: linear-gradient(to bottom, var(--top), var(--bottom));
@@ -484,6 +525,9 @@ a:focus-visible {
 @media (max-width: 640px) {
   .home {
     padding-top: 28px;
+  }
+  .strip {
+    margin-top: -28px;
   }
   .f-time,
   .f-zones,
