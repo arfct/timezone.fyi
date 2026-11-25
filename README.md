@@ -49,7 +49,7 @@ Every link has two more addresses:
 
 ## Status of this branch
 
-`geist/worker-refactor` is a prototype of the site as a Cloudflare Worker. It is deployed only at https://timezone-fyi-proto.arfct.workers.dev. timezone.fyi itself is still served by Netlify from `main`, and merging this branch would stop that deployment from building, because the Netlify functions are gone from it. The proposal, with the order to switch over in, is [docs/plans/2026-11-25-worker-refactor.md](docs/plans/2026-11-25-worker-refactor.md).
+`geist/worker-refactor` is a prototype of the site as a Cloudflare Worker. It is deployed at https://v2.timezone.fyi and https://timezone-fyi-proto.arfct.workers.dev. timezone.fyi itself is still served by Netlify from `main`, and merging this branch would stop that deployment from building, because the Netlify functions are gone from it. The proposal, with the order to switch over in, is [docs/plans/2026-11-25-worker-refactor.md](docs/plans/2026-11-25-worker-refactor.md).
 
 ## Architecture
 
@@ -88,7 +88,7 @@ npm ci
 npm run dev        # wrangler dev, at http://localhost:8787
 npm test           # every test file
 npm run check      # Biome: lint and format
-npm run deploy     # wrangler deploy, to the workers.dev prototype only
+npm run deploy     # wrangler deploy, to v2.timezone.fyi and workers.dev
 ```
 
 `npm run dev` needs the `og-svg` Worker for `card.png`: either run `wrangler dev` in a checkout of og-svg at the same time, or use `npx wrangler dev --remote`.
@@ -115,7 +115,7 @@ Times come from the IANA time zone database that the Workers runtime carries, re
 
 ## Deployment
 
-`npm run deploy` publishes the prototype to workers.dev. Nothing deploys on push from this branch.
+`npm run deploy` publishes the prototype to v2.timezone.fyi and workers.dev. Nothing deploys on push from this branch.
 
 ## Catalogue
 

@@ -1,13 +1,14 @@
 {
   "$schema": "node_modules/wrangler/config-schema.json",
   // Prototype of the Worker refactor (docs/plans/2026-11-25-worker-refactor.md).
-  // It runs only on workers.dev: no routes, no custom domains. timezone.fyi
-  // itself is still served by Netlify from main.
+  // It runs on workers.dev and on v2.timezone.fyi. timezone.fyi itself is
+  // still served by Netlify from main.
   "name": "timezone-fyi-proto",
   "main": "src/worker.js",
   "compatibility_date": "2026-11-03",
   "account_id": "c0912e10eadeaa117b0067ab29b55da6",
   "workers_dev": true,
+  "routes": [{ "pattern": "v2.timezone.fyi", "custom_domain": true }],
   "preview_urls": false,
   "observability": { "enabled": true },
   "assets": {

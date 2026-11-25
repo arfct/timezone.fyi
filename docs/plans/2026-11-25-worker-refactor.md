@@ -1,6 +1,6 @@
 # timezone.fyi as a Cloudflare Worker: proposal and prototype
 
-25 November 2026. Branch `geist/worker-refactor`. Prototype: https://timezone-fyi-proto.arfct.workers.dev
+25 November 2026. Branch `geist/worker-refactor`. Prototype: https://v2.timezone.fyi (also https://timezone-fyi-proto.arfct.workers.dev)
 
 This document is a plan in the repository. No `docs/` site is published from this repo.
 
