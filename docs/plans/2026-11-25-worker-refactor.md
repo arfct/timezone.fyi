@@ -161,7 +161,8 @@ Screenshots, before and after: see the previewer link in the report that came wi
 - The viewer's own zone is added by the page script as a last card marked "Your zone", unless a listed zone already has the same offset at that moment.
 - A live clock (`now`, or zones alone) is drawn by the Worker for the request's minute and then kept current by the browser with `Intl`. It makes no further requests.
 - Light and dark follow the system setting. The neutral and blue values are Quantum's tokens.
-- The landing page has the tagline ("Share your time with friends across zones.") and a builder: time, time zones, date, length, repeat and name fields, quick-add zone chips, and the link written out with a Copy link button. Below it, the grammar and examples.
+- The landing page has the tagline ("Share your time with friends across zones.") under the stripes, then the grammar and examples. A "Make a link" button above the stripes opens the builder as a dialog: time, time zones, date, length, repeat and name fields, quick-add zone chips, and the link written out with a Copy link button.
+- Only the buttons above the stripes are coloured, each with the gradient of the stripe nearest it. Every other button and chip is text colour.
 
 **Link-preview image** (1200×630 PNG)
 
