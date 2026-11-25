@@ -10,6 +10,7 @@
     // the move shows as a move. Formatting them is a separate change.
     "includes": [
       "**",
+      "!.vscode",
       "!src/data",
       "!src/fonts",
       "!src/lib/zone-lookup.js",
