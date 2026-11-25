@@ -281,7 +281,7 @@ B becomes worth revisiting if the two sites start sharing server-side state. Nei
 Order matters because Netlify builds from `main`, and this branch deletes the Netlify functions.
 
 1. Review the prototype and settle the open decisions.
-2. **Nicholas:** in Netlify, stop auto-publishing (lock the current deploy), so that merging cannot break the live site.
+2. Stop Netlify from building `main`, so that merging cannot break the live site. Done in the repo: `netlify.toml` now holds only `ignore = "exit 0"`, which tells Netlify to skip every build (Netlify's "Ignore builds" docs), so the last published deploy keeps serving. Locking the deploy in Netlify's dashboard as well is a second guard.
 3. Merge. Rename the Worker from `timezone-fyi-proto` to `timezone-fyi` in `wrangler.jsonc` and deploy to workers.dev. Add a deploy job to CI on push to `main`, as clock.app has, with `CLOUDFLARE_API_TOKEN` as a repository secret. **Nicholas** adds the secret.
 4. Compare the Worker on workers.dev against the live site on real links for a few days.
 5. **Nicholas:** attach timezone.fyi to the Worker as a custom domain. DNS is already on Cloudflare; the A record now points at Netlify (75.2.60.5) and is replaced by the custom domain's record. Rolling back is restoring that A record while the Netlify site still exists.
