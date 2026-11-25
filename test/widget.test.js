@@ -86,18 +86,18 @@ expect("25 pictures in all", MAX_ENTRIES, 25);
 const now = Date.UTC(2026, 10, 25, 9, 7, 23);
 const live = liveTimeline(now);
 expect("24 later entries", live.entries.length, 24);
-expect("the first is the next five minutes", isoUtc(live.entries[0]), "2026-11-25T09:10:00Z");
-expect("the last is two hours on", isoUtc(live.entries.at(-1)), "2026-11-25T11:05:00Z");
+expect("the first is the next minute", isoUtc(live.entries[0]), "2026-11-25T09:08:00Z");
+expect("the last is 24 minutes on", isoUtc(live.entries.at(-1)), "2026-11-25T09:31:00Z");
 expect(
-  "every five minutes",
-  live.entries.every((t, i) => i === 0 || t - live.entries[i - 1] === 5 * MINUTE),
+  "every minute, on the minute",
+  live.entries.every((t, i) => t % MINUTE === 0 && (i === 0 || t - live.entries[i - 1] === MINUTE)),
   true,
 );
 expect("reloads after the last", live.policy, "atEnd");
 expect(
-  "on a five-minute mark, the next one",
+  "on the minute, the next one",
   isoUtc(liveTimeline(Date.UTC(2026, 10, 25, 9, 10)).entries[0]),
-  "2026-11-25T09:15:00Z",
+  "2026-11-25T09:11:00Z",
 );
 const hourly = hourlyTimeline(now);
 expect("home: 24 later entries", hourly.entries.length, 24);

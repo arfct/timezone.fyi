@@ -58,11 +58,13 @@ export function widgetGrid(family, count) {
   return { shown, cols: shown };
 }
 
-// A live clock's timeline: the next 24 times that are a multiple of five
-// minutes (two hours; 55 minutes where Quicksilver keeps 12), then a reload. Each picture shows the minute of its entry, so the
-// clock is right at each entry and up to four minutes behind before the next.
+// A live clock's timeline: the next 24 minutes, each on the minute, then a
+// reload. Each picture shows the minute of its entry, so the clock is right
+// for as long as the timeline lasts (24 minutes; 11 where Quicksilver keeps
+// 12) and stays on its last minute until Quicksilver draws it again.
+export const LIVE_STEP = MINUTE;
 export function liveTimeline(now) {
-  const step = 5 * MINUTE;
+  const step = LIVE_STEP;
   const first = Math.floor(now / step) * step + step;
   const entries = Array.from({ length: MAX_ENTRIES - 1 }, (_, i) => first + i * step);
   return { entries, policy: "atEnd" };
