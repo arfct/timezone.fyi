@@ -47,6 +47,10 @@ Every link has two more addresses:
 - `<link>/event.ics`: the calendar file. A repeating event's file carries its zone's clock-change rules, so it stays at the same local time all year.
 - `<link>/card.png`: the 1200×630 image that link previews show.
 
+### In a Quicksilver widget
+
+Any page can be shown in a Home Screen or Lock Screen widget by Quicksilver for iPhone, which follows the web-widget convention in arfct/alchemy (`docs/web-widgets.md`). Quicksilver opens the page with `#widget?family=…&displaySize=…&colorScheme=…&date=…` in its address. Only then does `public/assets/app.js` switch to widget mode: the page fills the widget with stripes (two on a small widget, or the first zone alone when there are more; four on a medium one; six on a large one, under the event's name and day; a line each for three zones on the Lock Screen), hides the buttons, and draws every time, sky colour and "in 3 h" line for the fragment's `date` instead of the clock. It lists the moments the picture changes in `<meta name="widget-timeline">`, with a reload policy and `widget-url`, and redraws on `hashchange`. A live clock lists the next 24 five-minute marks. A dated event lists the moments its "in 3 h" line changes: days at midnight, then hours, then five-minute steps in the last hour. The home page shows today's 24 hours of sky with the current hour marked. A page opened without the fragment is unchanged. The timelines are in `public/assets/widget.js` and tested in `test/widget.test.js`.
+
 ## Status of this branch
 
 `geist/worker-refactor` is a prototype of the site as a Cloudflare Worker. It is deployed at https://v2.timezone.fyi and https://timezone-fyi-proto.arfct.workers.dev. timezone.fyi itself is still served by Netlify from `main`, and merging this branch would stop that deployment from building, because the Netlify functions are gone from it. The proposal, with the order to switch over in, is [docs/plans/2026-11-25-worker-refactor.md](docs/plans/2026-11-25-worker-refactor.md).
@@ -72,7 +76,7 @@ src/
     card.js        → the SVG of the link-preview image
   data/            → airport-map-data.json (IATA → IANA zone), major-places.json
   fonts/           → Inter Medium and Bold, cut down to the characters the image uses (OFL)
-public/assets/     → stylesheet, page script, icon: served without running the Worker
+public/assets/     → stylesheet, page script (widget.js: widget context and timelines), icon: served without running the Worker
 scripts/           → build-airport-map.mjs, build-fonts.py
 test/              → node test/run.js runs every *.test.js
 ```

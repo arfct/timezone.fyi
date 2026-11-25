@@ -555,3 +555,20 @@ Things to know when reading the table:
 - An abbreviation with a zone of its own keeps that zone's place: `wet` is Lisbon, `jst` is Tokyo.
 
 Tests: every offset any zone keeps in 2026 and every whole hour from −12:00 to +14:00 has an entry, half and quarter hours included, and each is within 30° of its own meridian. The bundle grew from 515.59 to 517.22 KiB.
+
+## 16. The pages as Quicksilver widgets
+
+Nicholas asked that the prototype work as a web widget in Quicksilver for iPhone (arfct/alchemy, `docs/web-widgets.md`). Quicksilver loads the page in a hidden web view at the widget's size, with the widget's context in the fragment, waits for it to settle, and takes a picture. It takes one more picture for each later date the page lists, changing only the fragment.
+
+What the page does with `#widget?…` in its address, and only then:
+
+- **The moment.** Everything that read the clock reads the fragment's `date`: the live clock's times, the sky colours, the day markers, the "in 3 h" line and the home page's hours. The minute timer does not run. Each `hashchange` redraws at once, without a request.
+- **The layout.** The stripes fill the widget. Small: two zones side by side, or the first alone when there are more. Medium: up to four. Large: up to four side by side or six in two rows, under the event's name and day. Lock Screen: a white line for each of up to three zones, with no gradients. A dated event has a line with its name or day and how far off it is. The buttons, the calendar sheet and the `timezone.fyi` mark are hidden, so the whole widget opens the page. The background is transparent where the stripes don't reach.
+- **The timeline.** A live clock lists the next 24 times on a five-minute mark and asks to be drawn again after the last (`atEnd`). Each picture shows its entry's minute, so between entries the clock is up to four minutes behind. A dated event's line is coarser than the page's so it can be kept right: calendar days changing at midnight beyond 48 hours, whole hours beyond one hour, then five-minute steps. The timeline lists each moment the line changes, up to 24, then `atEnd`. A past event asks for `never`. A repeating event stops at its end and an undated one at the next midnight in its first zone, since the Worker then answers with another event. The home page lists the next 24 hours.
+- **The limit.** The cap is `MAX_ENTRIES` (25 pictures with now) in `public/assets/widget.js`. Quicksilver keeps 12 today and drops the latest dates beyond that. Every timeline ends in `atEnd` while anything is left to change, so a cut-short timeline is drawn again after its last kept picture: today a live clock covers 55 minutes, with 25 it covers two hours.
+- **Settling.** Nothing polls. The page uses the system font and no images. The viewer's own zone is not added in a widget, so no table is fetched. The home page fetches the zone table only when the Worker could not place the visitor, and marks itself `data-widget-busy` while it does.
+
+Checked in headless Chrome with a harness that copies the renderer: the page at the widget's exact size and scale, the renderer's settle script word for word with a 12 second deadline, the timeline read as the renderer reads it, and each later entry drawn by setting `location.hash`. The first settle took 0.5 to 1 second and each later entry 0.1 to 0.4 seconds. An event page opened without the fragment matched the screenshot taken before the change to within one level in one colour channel.
+
+Not verified: the pages have not been drawn by Quicksilver itself, in the iOS simulator or on an iPhone, and Chrome is not WebKit.
+
