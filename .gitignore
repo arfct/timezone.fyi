@@ -119,3 +119,6 @@ deno.lock
 # To regenerate: download from https://davidmegginson.github.io/ourairports-data/airports.csv
 #   then run: npm run build:airports
 airports.csv
+
+# Wrangler's local state and bundles
+.wrangler/
