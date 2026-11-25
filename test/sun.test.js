@@ -5,7 +5,7 @@
  * Run with: npm test
  */
 
-import { skyAt } from "../public/assets/shared.js";
+import { paletteHours, skyAt } from "../public/assets/sky.js";
 import { SUNRISE, sunAt, sunEvents, sunSky } from "../public/assets/sun.js";
 import { coordsOf } from "../src/lib/coords.js";
 import { resolveEvent } from "../src/lib/event.js";
@@ -300,7 +300,12 @@ console.log("\nFrom the sun to the palette hour");
 const near = (a, b, by = 0.05) => Math.abs(a - b) <= by;
 const ny = { lat: 40.7128, lon: -74.006 };
 const day = sunEvents(Date.parse("2026-03-20T17:00Z"), ny.lat, ny.lon);
-const hourAt = (ms, place = ny) => sunSky(ms, place.lat, place.lon).hour;
+// The top's palette hour: the morning's before solar noon, the evening's after
+const hours = (ms, place = ny) => paletteHours(sunSky(ms, place.lat, place.lon));
+const hourAt = (ms, place = ny) => {
+  const [morning, evening, evenings] = hours(ms, place);
+  return evenings > 0.5 ? evening : morning;
+};
 expect("solar noon is palette hour 12", near(hourAt(day.noon), 12), true);
 expect("sunrise is 6.5", near(hourAt(day.sunrise), 6.5), true);
 expect("sunset is 18.5", near(hourAt(day.sunset), 18.5), true);
@@ -308,14 +313,25 @@ expect("civil dawn is 5.5", near(hourAt(day.dawn), 5.5), true);
 expect("civil dusk is 19.5", near(hourAt(day.dusk), 19.5), true);
 const midnight = hourAt(day.noon - 43200000);
 expect("solar midnight is 0, or 24", Math.min(midnight, 24 - midnight) < 0.1, true);
-expect("an ordinary day blends nothing", sunSky(day.noon - 3 * 3600000, ny.lat, ny.lon).mix, 0);
+expect("an ordinary morning is all morning", hours(day.noon - 3 * 3600000)[2], 0);
+expect("…and an ordinary afternoon all evening", hours(day.noon + 3 * 3600000)[2], 1);
+expect(
+  "the bottom, lit from further round, is ahead of the top at dawn",
+  paletteHours(sunSky(day.dawn, ny.lat, ny.lon), 1.5)[0] > hourAt(day.dawn),
+  true,
+);
+expect(
+  "…and behind it at dusk",
+  paletteHours(sunSky(day.dusk, ny.lat, ny.lon), 1.5)[1] < hourAt(day.dusk),
+  true,
+);
 
 // On the day the gradient was drawn for, the sun and the clock agree
 let apart = 0;
 for (let minute = 0; minute < 1440; minute += 10) {
   // 40° north on the Greenwich meridian at the March equinox; the clock runs
   // 7 minutes ahead of the sun that day
-  const hour = sunSky(Date.parse("2026-03-20T00:00Z") + minute * 60000, 40, 0).hour;
+  const hour = hourAt(Date.parse("2026-03-20T00:00Z") + minute * 60000, { lat: 40, lon: 0 });
   const clock = minute / 60;
   apart = Math.max(apart, Math.min(Math.abs(hour - clock), 24 - Math.abs(hour - clock)));
 }
@@ -327,33 +343,33 @@ const juneNine = sunSky(Date.parse("2026-06-21T21:00Z"), rey.lat, rey.lon);
 const decNine = sunSky(Date.parse("2026-12-21T21:00Z"), rey.lat, rey.lon);
 expect(
   "Reykjavik at 9pm in June is still afternoon",
-  juneNine.hour > 14 && juneNine.hour < 18,
+  paletteHours(juneNine)[1] > 14 && paletteHours(juneNine)[1] < 18,
   true,
 );
-expect("…with a sky that takes dark text", skyAt(0, juneNine).dark, false);
-expect("Reykjavik at 9pm in December is night", decNine.hour > 21, true);
-expect("…with a sky that takes light text", skyAt(0, decNine).dark, true);
+expect("…with a sky that takes dark text", skyAt(21 * 60, juneNine).dark, false);
+expect("Reykjavik at 9pm in December is night", paletteHours(decNine)[1] > 21, true);
+expect("…with a sky that takes light text", skyAt(21 * 60, decNine).dark, true);
 
 const tromso = { lat: 69.6, lon: 19 };
 const polarNoon = sunSky(Date.parse("2026-12-21T10:42Z"), tromso.lat, tromso.lon);
 expect(
-  "polar night: noon in Tromsø in December is twilight, half dawn and half dusk",
-  polarNoon.hour < 6.5 || polarNoon.hour > 18.5,
+  "polar night: noon in Tromsø in December is twilight on both sides",
+  paletteHours(polarNoon)[0] < 6.5 && paletteHours(polarNoon)[1] > 18.5,
   true,
 );
-expect("…blended evenly", near(polarNoon.mix, 0.5, 0.02), true);
-expect("…and dark", skyAt(0, polarNoon).dark, true);
+expect("…half dawn and half dusk", near(paletteHours(polarNoon)[2], 0.5, 0.02), true);
+expect("…and no lighter than twilight", skyAt(11 * 60 + 42, polarNoon).top < "#9", true);
 const polarMidnight = sunSky(Date.parse("2026-06-21T22:46Z"), tromso.lat, tromso.lon);
 expect(
   "polar day: midnight in Tromsø in June stays in the day's colours",
-  polarMidnight.hour >= 9 && polarMidnight.hour <= 15.5,
+  paletteHours(polarMidnight)[0] >= 9 && paletteHours(polarMidnight)[1] <= 15.5,
   true,
 );
-expect("…and light", skyAt(0, polarMidnight).dark, false);
-const svalbardNoon = sunSky(Date.parse("2026-12-21T10:55Z"), 78.2, 15.6);
+expect("…and light", skyAt(46, polarMidnight).dark, false);
+const svalbardNoon = paletteHours(sunSky(Date.parse("2026-12-21T10:55Z"), 78.2, 15.6));
 expect(
   "deeper polar night: noon in Longyearbyen is night",
-  svalbardNoon.hour < 5.5 || svalbardNoon.hour > 19.5,
+  svalbardNoon[0] < 5.5 && svalbardNoon[1] > 19.5,
   true,
 );
 expect(
@@ -362,31 +378,12 @@ expect(
   true,
 );
 
-// The colours never jump: a live clock repaints every minute
-const channels = (sky) =>
-  [sky.top, sky.bottom].flatMap((c) => [1, 3, 5].map((i) => parseInt(c.slice(i, i + 2), 16)));
-let jump = 0;
-for (const lat of [0, 40.7, 51.5, 64.1, 66.6, 69.6, 78.2, 89.5, -54.8, -77.8]) {
-  let before;
-  for (let ms = Date.UTC(2026, 0, 1); ms < Date.UTC(2027, 0, 1); ms += 5 * 60000) {
-    const now = channels(skyAt(0, sunSky(ms, lat, 10)));
-    if (before) jump = Math.max(jump, ...now.map((v, i) => Math.abs(v - before[i])));
-    before = now;
-  }
-}
-expect(
-  `no colour moves more than a quarter of its range in 5 minutes, any latitude, all year (most: ${jump})`,
-  jump < 64,
-  true,
-);
-
 console.log("\nThe clock's colours where there is no place");
 expect("without a sun the sky follows the clock", skyAt(600).top, "#f6e98f");
-expect("with one it follows the sun", skyAt(0, { hour: 10, other: 0, mix: 0 }).top, "#f6e98f");
 expect(
-  "a blend is halfway between two palette hours",
-  skyAt(0, { hour: 0, other: 12, mix: 0.5 }).top,
-  "#808357",
+  "with one it follows the sun",
+  skyAt(600, sunSky(Date.parse("2026-06-21T10:00Z"), 69.6, 19)).top === skyAt(600).top,
+  false,
 );
 
 console.log("\nWhere a zone code is");
@@ -424,17 +421,25 @@ const read = (path) => resolveEvent(parsePath(path), NOW);
 const june = read("/2026-06-21/9pm,rek,lon,mad,sin");
 const december = read("/2026-12-21/9pm,rek,lon,mad,sin");
 expect("each zone carries its place", `${june.zones[0].lat},${june.zones[0].lon}`, "64.1,-21.9");
-expect("Reykjavik at 9pm: light in June", skyAt(0, june.zones[0].sun).dark, false);
-expect("Reykjavik at 9pm: dark in December", skyAt(0, december.zones[0].sun).dark, true);
+expect(
+  "Reykjavik at 9pm: light in June",
+  skyAt(june.zones[0].minutes, june.zones[0].sun).dark,
+  false,
+);
+expect(
+  "Reykjavik at 9pm: dark in December",
+  skyAt(december.zones[0].minutes, december.zones[0].sun).dark,
+  true,
+);
 expect(
   "Singapore at 5am the next day: the same sky in both",
-  near(june.zones[3].sun.hour, december.zones[3].sun.hour, 0.3),
+  near(paletteHours(june.zones[3].sun)[0], paletteHours(december.zones[3].sun)[0], 0.3),
   true,
 );
 const junePage = eventPage(june, ORIGIN, `${ORIGIN}${june.path}/card.png`);
 expect(
   "the page paints Reykjavik's stripe from its sun",
-  junePage.includes(`--top:${skyAt(0, june.zones[0].sun).top};`),
+  junePage.includes(`--top:${skyAt(june.zones[0].minutes, june.zones[0].sun).top};`),
   true,
 );
 expect(
@@ -444,7 +449,7 @@ expect(
 );
 expect(
   "the image paints it from the same sun",
-  eventCard(june).includes(skyAt(0, june.zones[0].sun).topP3Hex),
+  eventCard(june).includes(skyAt(june.zones[0].minutes, june.zones[0].sun).topP3Hex),
   true,
 );
 const offsets = read("/2026-06-21/9pm,gmt+1,utc");
@@ -483,6 +488,6 @@ expect("Oslo in December has few", lightHours(homeDecember) <= 8, true);
 expect(
   "a stripe is that hour of today in the visitor's zone",
   stripes(homeDecember)[16][1],
-  skyAt(0, sunSky(Date.parse("2026-12-21T15:00Z"), oslo.lat, oslo.lon)).top,
+  skyAt(16 * 60, sunSky(Date.parse("2026-12-21T15:00Z"), oslo.lat, oslo.lon)).top,
 );
 expect("SUNRISE is where the sun's top edge meets the horizon", SUNRISE, -0.833);

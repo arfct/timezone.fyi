@@ -52,7 +52,7 @@ export function solar(ms) {
 
 // The hour angle at which the sun stands at `elevation` degrees: 0 when it
 // never gets that high on this day, 180 when it never gets that low.
-function hourAngleAt(elevation, lat, declination) {
+export function hourAngleAt(elevation, lat, declination) {
   const c = (sin(elevation) - sin(lat) * sin(declination)) / (cos(lat) * cos(declination));
   return c >= 1 ? 0 : c <= -1 ? 180 : Math.acos(c) / RAD;
 }
@@ -104,93 +104,23 @@ export function sunEvents(ms, lat, lon) {
   };
 }
 
-// --- From the sun to the sky gradient -------------------------------------
-//
-// The gradient (SKY in shared.js) has 24 entries, drawn for the hours of a
-// day with sunrise near 6am and sunset near 6pm. A place and an instant pick a
-// "palette hour" in it, by the sun and not by the clock:
-//
-//   solar midnight 0 · civil dawn 5.5 · sunrise 6.5 · solar noon 12
-//   · sunset 18.5 · civil dusk 19.5 · solar midnight 24
-//
-// and in a straight line between those. So morning keeps the morning colours
-// and evening the evening ones, however long the day is.
-//
-// Where the sun doesn't reach one of those marks, the end of the line is set
-// by how high or low the sun does get: a winter noon with the sun under 30°
-// stops short of the full midday colours, a summer midnight with the sun 15°
-// down stops short of full night, a polar noon in twilight stays in the
-// twilight colours and a polar midnight in sunlight stays in the day's.
-
-// Palette hour for the sun standing at an elevation, morning side and evening
-// side. Past 30° up it's midday; past 30° down it's midnight.
-const RAMP = [
-  [-30, 0, 24],
-  [-18, 4, 21],
-  [CIVIL, 5.5, 19.5],
-  [SUNRISE, 6.5, 18.5],
-  [2, 9, 15.5],
-  [30, 12, 12],
-];
-function rampAt(elevation, side) {
-  if (elevation <= RAMP[0][0]) return RAMP[0][side];
-  for (let i = 1; i < RAMP.length; i++) {
-    if (elevation <= RAMP[i][0]) {
-      const t = (elevation - RAMP[i - 1][0]) / (RAMP[i][0] - RAMP[i - 1][0]);
-      return RAMP[i - 1][side] + (RAMP[i][side] - RAMP[i - 1][side]) * t;
-    }
-  }
-  return 12;
-}
-
-const clamp01 = (v) => Math.min(1, Math.max(0, v));
-
 // in: an instant (ms) and a place
-// out: { hour, other, mix } for skyAt in shared.js: the palette hour, and
-//      where morning and evening colours meet without passing through midday
-//      or midnight (a polar noon, a white night), a second palette hour and
-//      how much of it to blend in, 0 to 1. On an ordinary day mix is 0.
+// out: the sun's state there, for skyAt in sky.js: { lat, hourAngle,
+//      elevation, declination, turnDeclination }. turnDeclination is the
+//      declination at the nearest solar noon or solar midnight, whichever is
+//      nearer: a value that holds still for the six hours either side.
 export function sunSky(ms, lat, lon) {
   // At the poles themselves the hour angle means nothing; stay a hair inside
   lat = Math.min(89.9, Math.max(-89.9, lat));
-  const { hourAngle, declination } = sunAt(ms, lat, lon);
-  const high = 90 - Math.abs(lat - declination); // elevation at solar noon
-  const low = Math.abs(lat + declination) - 90; // and at solar midnight
-  const rise = hourAngleAt(SUNRISE, lat, declination);
-  const dusk = hourAngleAt(CIVIL, lat, declination);
-  const h = Math.abs(hourAngle);
-
-  // One side of the day: palette hours at midnight, dusk or dawn, sunset or
-  // sunrise, and noon, against the hour angle
-  const branch = (side) => {
-    const points = [[0, rampAt(high, side)]];
-    if (rise > 0 && rise < 180) points.push([rise, RAMP[3][side]]);
-    if (dusk > 0 && dusk < 180) points.push([dusk, RAMP[2][side]]);
-    points.push([180, rampAt(low, side)]);
-    for (let i = 1; i < points.length; i++) {
-      if (h <= points[i][0]) {
-        const t = (h - points[i - 1][0]) / (points[i][0] - points[i - 1][0]);
-        return points[i - 1][1] + (points[i][1] - points[i - 1][1]) * t;
-      }
-    }
-    return points[points.length - 1][1];
+  const { hourAngle, elevation, declination } = sunAt(ms, lat, lon);
+  // Degrees since the nearest turn of the day: noon, or midnight
+  const since =
+    Math.abs(hourAngle) < 90 ? hourAngle : hourAngle > 0 ? hourAngle - 180 : hourAngle + 180;
+  return {
+    lat,
+    hourAngle,
+    elevation,
+    declination,
+    turnDeclination: solar(ms - since * 4 * MINUTE).declination,
   };
-  const morning = branch(1);
-  const evening = branch(2);
-
-  // Morning and evening meet at noon and at midnight. When they don't meet at
-  // the same palette hour there, one fades into the other around that moment:
-  // over the six hours either side when the gap is whole (blue dawn against
-  // pink dusk), and over much less when it's small (two shades of yellow).
-  const noonSpan = 90 * clamp01((12 - rampAt(high, 1)) / 5.5) ** 2;
-  const nightSpan = 90 * clamp01(rampAt(low, 1) / 5.5) ** 2;
-  let evenings = hourAngle > 0 ? 1 : 0; // how much of the evening branch
-  if (h < noonSpan) evenings = 0.5 + hourAngle / noonSpan / 2;
-  else if (180 - h < nightSpan) {
-    const past = hourAngle > 0 ? h - 180 : 180 - h; // degrees after midnight
-    evenings = 0.5 - past / nightSpan / 2;
-  }
-  return evenings <= 0.5
-    ? { hour: morning, other: evening, mix: evenings }
-    : { hour: evening, other: morning, mix: 1 - evenings };
 }

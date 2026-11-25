@@ -168,7 +168,7 @@ expect("24-hour pads and keeps minutes", clockText(540, true), "09:00");
 expect("midnight sky wants light text", skyAt(0).dark, true);
 expect("10am sky wants dark text", skyAt(600).dark, false);
 expect("on the hour the sky is the hour's colours", skyAt(600).top, "#f6e98f");
-expect("half past is halfway to the next hour's", skyAt(630).top, "#f9e77d");
+expect("half past is halfway to the next hour's, in OKLab", skyAt(630).top, "#f9e77e");
 const H = 3600000;
 expect("in 3 h 12 min", relativeText(NOW + 3 * H + 12 * 60000, undefined, NOW), "in 3 h 12 min");
 expect("in 8 days", relativeText(NOW + 8 * 24 * H, undefined, NOW), "in 8 days");
@@ -238,17 +238,27 @@ expect("the image has no AM or PM", /\b[AP]M\b/.test(drawn), false);
 expect("the home image has no panel behind the name", /<rect[^>]* rx=/.test(homeCard()), false);
 
 console.log("\nDisplay P3");
-const { SKY, SKY_P3 } = await import("../public/assets/shared.js");
-expect("a P3 pair for every hour", SKY_P3.length, SKY.length);
+const { SKY } = await import("../public/assets/shared.js");
+// Display P3 is worked out from each colour as it's drawn: the same lightness
+// and hue with up to 1.3 times the chroma. These are the values the table
+// this replaced held for 10am, noon and midnight.
+const p3Of = (css) =>
+  css
+    .match(/[\d.]+(?= |\))/g)
+    .slice(1)
+    .map(Number);
+const nearP3 = (css, want) => p3Of(css).every((v, i) => Math.abs(v - want[i]) < 0.002);
+expect("10am's top in P3", nearP3(skyAt(10 * 60).topP3, [0.973, 0.916, 0.499]), true);
+expect("noon's bottom in P3", nearP3(skyAt(12 * 60).bottomP3, [0.646, 0.879, 0.773]), true);
+expect("midnight's top in P3", nearP3(skyAt(0).topP3, [0, 0.119, 0.388]), true);
 expect(
-  "every P3 component is between 0 and 1",
-  SKY_P3.flat(2).every((v) => v >= 0 && v <= 1),
+  "every P3 component of every hour is between 0 and 1",
+  SKY.every((_, h) =>
+    [skyAt(h * 60).topP3, skyAt(h * 60).bottomP3].every((c) =>
+      p3Of(c).every((v) => v >= 0 && v <= 1),
+    ),
+  ),
   true,
-);
-expect(
-  "skyAt on the hour is the table's colour",
-  skyAt(10 * 60).topP3,
-  "color(display-p3 0.973 0.916 0.499)",
 );
 expect("…with the sRGB colour kept for fallback", skyAt(10 * 60).top, SKY[10][0]);
 const striped = page("/2026-12-03/10am,nyc");
