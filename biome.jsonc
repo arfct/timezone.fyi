@@ -12,6 +12,7 @@
       "**",
       "!.vscode",
       "!src/data",
+      "!public/assets/zone-coords.js",
       "!src/fonts",
       "!src/lib/zone-lookup.js",
       "!scripts/build-airport-map.mjs",

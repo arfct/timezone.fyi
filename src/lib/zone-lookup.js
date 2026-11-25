@@ -189,6 +189,44 @@ export const zoneAbbreviations = {
   WIT: "Asia/Jayapura",
 };
 
+// Where an abbreviation with a fixed offset is, for the sun's position: the
+// zone whose principal city stands for it. GMT has none: it's written for
+// plain UTC as often as for a place.
+export const abbreviationPlaces = {
+  ACDT: "Australia/Adelaide",
+  ACST: "Australia/Adelaide",
+  ADT: "America/Halifax",
+  AEDT: "Australia/Sydney",
+  AEST: "Australia/Sydney",
+  AKDT: "America/Anchorage",
+  AKST: "America/Anchorage",
+  AST: "America/Halifax",
+  AWST: "Australia/Perth",
+  BST: "Europe/London",
+  CAT: "Africa/Maputo",
+  CEST: "Europe/Paris",
+  CET: "Europe/Paris",
+  CHST: "Pacific/Guam",
+  EAT: "Africa/Nairobi",
+  EEST: "Europe/Athens",
+  EET: "Europe/Athens",
+  HKT: "Asia/Hong_Kong",
+  HST: "Pacific/Honolulu",
+  IDT: "Asia/Jerusalem",
+  JST: "Asia/Tokyo",
+  NDT: "America/St_Johns",
+  NST: "America/St_Johns",
+  NZDT: "Pacific/Auckland",
+  NZST: "Pacific/Auckland",
+  PDT: "America/Los_Angeles",
+  PKT: "Asia/Karachi",
+  SAST: "Africa/Johannesburg",
+  SST: "Pacific/Pago_Pago",
+  WAT: "Africa/Lagos",
+  WEST: "Europe/Lisbon",
+  WET: "Europe/Lisbon",
+};
+
 // Places that beat everything else: corrections to the airport data, and
 // nicknames that aren't IATA codes.
 const placeAliases = {
@@ -251,9 +289,11 @@ function readCode(upper) {
 }
 
 // in: the zone codes from a URL, e.g. ["pst", "lhr"]
-// out: for each code, a UTC offset in hours (number), an IANA zone name,
-// or the code unchanged when nothing matches
-export function resolveCodes(codes) {
+// out: for each code, { value, kind }. value is a UTC offset in hours
+// (number), an IANA zone name, or the code unchanged when nothing matches;
+// kind is "place" (an airport or city), "zone" (an abbreviation or offset) or
+// undefined (a zone name, or nothing known)
+export function resolvePlaces(codes) {
   const uppers = codes.map((code) => code.toUpperCase());
   const readings = uppers.map(readCode);
   // Two-sided codes follow the first code that reads as a zone or a place
@@ -261,8 +301,17 @@ export function resolveCodes(codes) {
   return codes.map((code, i) => {
     const upper = uppers[i];
     if (collisions[upper] === "either") {
-      return preferPlace ? airportMap[upper] : zoneAbbreviations[upper];
+      return preferPlace
+        ? { value: airportMap[upper], kind: "place" }
+        : { value: zoneAbbreviations[upper], kind: "zone" };
     }
-    return readings[i].value ?? code;
+    return { value: readings[i].value ?? code, kind: readings[i].kind };
   });
+}
+
+// in: the zone codes from a URL, e.g. ["pst", "lhr"]
+// out: for each code, a UTC offset in hours (number), an IANA zone name,
+// or the code unchanged when nothing matches
+export function resolveCodes(codes) {
+  return resolvePlaces(codes).map((reading) => reading.value);
 }
