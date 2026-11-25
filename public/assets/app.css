@@ -225,6 +225,9 @@ a:focus-visible {
   justify-content: center;
   gap: 0.6em;
   text-align: center;
+  /* A drag or double tap over a tile selects no text */
+  -webkit-user-select: none;
+  user-select: none;
 }
 .zone.dark {
   color: #ffffff;
