@@ -1,5 +1,6 @@
 // The link-preview image for an event, as an SVG string, 1200×630. One cell
-// per zone, filled with the sky gradient for the local time there.
+// per zone, filled with the sky gradient for the sun there at that moment
+// (for the clock time, where the zone has no place).
 // Rasterised by the og-svg Worker; see worker.js. The sky colours are written
 // as Display P3 values, and worker.js tags the PNG as Display P3.
 import { clock, dateText, SKY, skyAt } from "../../public/assets/shared.js";
@@ -109,7 +110,7 @@ function fit(lines, w, h) {
 // `shared` is the time, name and note sizes every cell in the row uses, so
 // the times line up across the image
 function cell(z, event, i, x, y, w, h, shared) {
-  const sky = skyAt(z.minutes);
+  const sky = skyAt(z.minutes, z.sun);
   const ink = sky.dark ? "#ffffff" : INK_DARK;
   const lines = cellLines(z, event);
   const inner = w * 0.84;
@@ -238,9 +239,8 @@ export function eventCard(event) {
     );
   } else {
     // No header: the name sits in the last cell's bottom corner
-    const last = skyAt(
-      event.zones[Math.min(event.zones.length, perRow * rowCount) - 1]?.minutes ?? 0,
-    );
+    const corner = event.zones[Math.min(event.zones.length, perRow * rowCount) - 1];
+    const last = skyAt(corner?.minutes ?? 0, corner?.sun);
     parts.push(
       `<text x="${WIDTH - 32}" y="${HEIGHT - 30}" text-anchor="end" font-family="Inter" font-size="${markSize}" font-weight="500" ` +
         `fill="${more || last.dark ? "#ffffff" : INK_DARK}" fill-opacity="0.55">timezone.fyi</text>`,
@@ -254,7 +254,7 @@ export function eventCard(event) {
 }
 
 // The image for the home page and for links that don't parse: the 24 hours of
-// the sky gradient, the name and the tagline.
+// the sky gradient as drawn (no place, no season), the name and the tagline.
 export function homeCard() {
   const w = WIDTH / 24;
   const stripes = SKY.map((_, i) => skyAt(i * 60))

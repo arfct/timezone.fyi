@@ -1,7 +1,18 @@
 // Everything the pages do in the browser: the "in 3 h 12 min" line, a card for
 // the viewer's own zone, live clocks, the copy button and the link builder.
-// No requests after the first load; times come from the browser's Intl.
-import { clockText, columnsFor, dateText, relativeText, zoneCard } from "./shared.js";
+// No requests to the Worker after the first load; times come from the
+// browser's Intl and the sky colours from sun.js.
+import {
+  clockText,
+  columnsFor,
+  dateText,
+  relativeText,
+  SKY,
+  skyAt,
+  skyStyle,
+  zoneCard,
+} from "./shared.js";
+import { sunSky } from "./sun.js";
 
 const MINUTE = 60000;
 
@@ -36,6 +47,21 @@ function wallAt(zone, ms) {
   };
 }
 
+// The principal place of the browser's own time zone, as { lat, lon }, or
+// undefined. The table is a static file, fetched only when a page needs it:
+// for the viewer's own card, and for the home page when the Worker couldn't
+// place the visitor.
+async function myPlace() {
+  try {
+    const zone = Intl.DateTimeFormat().resolvedOptions().timeZone;
+    const table = (await import("./zone-coords.js")).default;
+    const found = table[zone];
+    return found ? { lat: found[0], lon: found[1] } : undefined;
+  } catch {
+    return undefined;
+  }
+}
+
 function card(z, event, first) {
   const wall = wallAt(z.zone, event.start);
   const view = {
@@ -46,6 +72,8 @@ function card(z, event, first) {
     minutes: wall.minutes,
     dayOffset: wall.dayNumber - first.dayNumber,
     dayText: dateText(wall),
+    // The sky follows the sun where the zone has a place, the clock otherwise
+    sun: z.lat === undefined ? undefined : sunSky(event.start, z.lat, z.lon),
   };
   if (event.end !== undefined) {
     const end = wallAt(z.zone, event.end);
@@ -69,11 +97,23 @@ function eventPage(event) {
       (z) => z.zone === mine || wallAt(z.zone, event.start).offset === offset,
     );
     if (!shown) {
-      event.zones.push({
+      const you = {
         name: mine.split("/").pop().replace(/_/g, " ").toUpperCase(),
         place: "",
         zone: mine,
         you: true,
+      };
+      event.zones.push(you);
+      // Its colours follow the clock until its place arrives
+      myPlace().then((place) => {
+        if (!place) return;
+        Object.assign(you, place);
+        if (event.live) draw();
+        else {
+          const first = wallAt(event.zones[0].zone, event.start);
+          zones.querySelector(".zone.you")?.remove();
+          zones.insertAdjacentHTML("beforeend", card(you, event, first));
+        }
       });
     }
   }
@@ -196,6 +236,23 @@ function builder(root) {
   update();
 }
 
+// The home page's stripes are each hour of today where the visitor is. The
+// Worker draws them when it can place the visitor (data-lat); when it can't,
+// they're drawn here for the place of the browser's time zone.
+async function homeStrip() {
+  const strip = document.querySelector(".strip");
+  if (!strip || strip.dataset.lat) return;
+  const place = await myPlace();
+  if (!place) return;
+  const now = new Date();
+  const stripes = strip.querySelectorAll("i");
+  SKY.forEach((_, hour) => {
+    const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour).getTime();
+    stripes[hour].style.cssText = skyStyle(skyAt(hour * 60, sunSky(at, place.lat, place.lon)));
+  });
+  queuePaint();
+}
+
 // How far the system font's colon has to rise to centre on its digits, in em.
 // Fonts differ (San Francisco 0.112, others less or none), so it's measured.
 function colonLift() {
@@ -265,3 +322,4 @@ if (data) eventPage(JSON.parse(data.textContent));
 copyButton();
 const root = document.getElementById("builder");
 if (root) builder(root);
+homeStrip();

@@ -8,7 +8,9 @@ import {
   skyStyle,
   zoneCard,
 } from "../../public/assets/shared.js";
+import { sunSky } from "../../public/assets/sun.js";
 import { calendarLinks, DEFAULT_DURATION } from "../lib/ics.js";
+import { instantOf, wallAt } from "../lib/tz.js";
 
 const SITE = "timezone.fyi";
 const TAGLINE = "Share your time with friends across zones.";
@@ -137,6 +139,7 @@ export function eventPage(event, origin, image) {
           dayOffset: z.dayOffset,
           endDayOffset: z.endDayOffset,
           dayText: dateText(z.wall),
+          sun: z.sun,
         },
         event.h24,
       ),
@@ -164,7 +167,14 @@ export function eventPage(event, origin, image) {
     start: event.start,
     end: event.end,
     date: event.live ? undefined : event.date,
-    zones: event.zones.map((z) => ({ name: z.name, place: z.place, zone: z.zone })),
+    // lat and lon are where the browser works out the sun for a live clock
+    zones: event.zones.map((z) => ({
+      name: z.name,
+      place: z.place,
+      zone: z.zone,
+      lat: z.lat,
+      lon: z.lon,
+    })),
   };
 
   const body = `<header class="top">
@@ -198,7 +208,9 @@ ${event.live ? "" : calendarPanel(event, origin)}
     bodyClass: event.live ? "live" : "event",
     // Until app.js matches each button to its nearest stripe, they take the
     // last zone's colours: the stripe under the top-right corner
-    bodyStyle: skyStyle(skyAt(event.zones[event.zones.length - 1].minutes)),
+    bodyStyle: skyStyle(
+      skyAt(event.zones[event.zones.length - 1].minutes, event.zones[event.zones.length - 1].sun),
+    ),
     body,
     extraHead,
   });
@@ -213,11 +225,31 @@ const EXAMPLES = [
   ["/now,cst,pst", "Live clock"],
 ];
 
+// The 24 stripes of the home page: each hour of today where the visitor is.
+// in: where = { lat, lon, zone } and the current instant; without them, the
+//     hours of the gradient as drawn
+function homeStrip(where, now) {
+  // The hours are counted from today's noon, which costs one look at the
+  // zone's clock, not 24. On the two days a year the clocks change, the
+  // hours before the change (in the night) are drawn an hour out.
+  let noon;
+  if (where) {
+    const today = wallAt(where.zone, now);
+    noon = instantOf(where.zone, today.year, today.month, today.day, 720).ms;
+  }
+  return SKY.map((_, hour) => {
+    const sun = where ? sunSky(noon + (hour - 12) * 3600000, where.lat, where.lon) : undefined;
+    return `<i style="${skyStyle(skyAt(hour * 60, sun))}"></i>`;
+  }).join("");
+}
+
 // The home page, with the link builder. `error` explains a link that didn't
-// parse.
-export function homePage(origin, error) {
+// parse. `where` is the visitor's place, { lat, lon, zone }, when the Worker
+// knows it: the stripes then show today's sky there. A page with `where` is
+// for that visitor only and must not be cached for others.
+export function homePage(origin, error, where, now = Date.now()) {
   const e = escapeHtml;
-  const strip = SKY.map((_, hour) => `<i style="${skyStyle(skyAt(hour * 60))}"></i>`).join("");
+  const strip = homeStrip(where, now);
   const examples = EXAMPLES.map(
     ([path, what]) =>
       `<li><a href="${e(path)}"><code>${e(path)}</code></a><span>${e(what)}</span></li>`,
@@ -230,7 +262,7 @@ export function homePage(origin, error) {
 </header>
 <main class="home">
 <header class="hero">
-<div class="strip">${strip}<h1>${SITE}</h1></div>
+<div class="strip"${where ? ` data-lat="${where.lat}" data-lon="${where.lon}"` : ""}>${strip}<h1>${SITE}</h1></div>
 <p class="lede">${TAGLINE}</p>
 </header>
 ${error ? `<p class="error" role="alert">${e(error)}</p>` : ""}

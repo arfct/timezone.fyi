@@ -6,6 +6,7 @@
 import displayP3 from "./color/DisplayP3-v4.icc";
 import interBold from "./fonts/Inter-Bold.subset.ttf";
 import interMedium from "./fonts/Inter-Medium.subset.ttf";
+import { zoneCoordsOf } from "./lib/coords.js";
 import { resolveEvent } from "./lib/event.js";
 import { buildIcs, summary } from "./lib/ics.js";
 import { parsePath } from "./lib/parse-path.js";
@@ -15,7 +16,7 @@ import { eventCard, homeCard, WIDTH } from "./render/card.js";
 import { eventPage, homePage } from "./render/page.js";
 
 // Part of every cached image's key. Raise it when the image's design changes.
-const CARD_VERSION = "9";
+const CARD_VERSION = "10";
 
 // The Display P3 chunk every image carries, built once per isolate
 let p3Chunk;
@@ -92,6 +93,22 @@ async function cardResponse(svg, keyUrl, env, ctx, cacheControl) {
   });
 }
 
+// Where the visitor is, for the home page's stripes: Cloudflare's reading of
+// the request's address (the city, no permission asked), rounded to 0.1°, or
+// failing that the principal place of the time zone it names.
+// out: { lat, lon, zone } or undefined
+function visitorPlace(request) {
+  const cf = request.cf;
+  const zone = cf?.timezone && canonicalZone(cf.timezone);
+  if (!zone) return undefined;
+  const lat = Number.parseFloat(cf.latitude);
+  const lon = Number.parseFloat(cf.longitude);
+  if (Number.isFinite(lat) && Number.isFinite(lon) && Math.abs(lat) <= 90 && Math.abs(lon) <= 180)
+    return { lat: Math.round(lat * 10) / 10, lon: Math.round(lon * 10) / 10, zone };
+  const place = zoneCoordsOf(zone);
+  return place ? { lat: place[0], lon: place[1], zone } : undefined;
+}
+
 // What this runtime's time zone data knows: for checking how fresh it is
 function runtimeReport() {
   const july = Date.UTC(2026, 6, 1);
@@ -139,9 +156,18 @@ export default {
           status: 404,
         });
       if (model.suffix) return new Response("The home image is /card.png", { status: 404 });
-      return html(homePage(origin), 200, "public, max-age=3600");
+      // The stripes are the visitor's own day, so the page is theirs alone:
+      // their browser may keep it, a shared cache may not
+      const where = visitorPlace(request);
+      return html(
+        homePage(origin, undefined, where),
+        200,
+        where ? "private, max-age=3600" : "public, max-age=3600",
+      );
     }
-    if (model.kind === "error") return html(homePage(origin, model.message), 404, "no-store");
+    const where = visitorPlace(request);
+    if (model.kind === "error")
+      return html(homePage(origin, model.message, where), 404, "no-store");
 
     // An image URL says which day or minute it shows (see cardStamp)
     const options = {};
@@ -155,7 +181,7 @@ export default {
     const event = resolveEvent(model, Date.now(), options);
     if (event.error) {
       if (model.suffix) return new Response(event.error, { status: 404 });
-      return html(homePage(origin, event.error), 404, "no-store");
+      return html(homePage(origin, event.error, where), 404, "no-store");
     }
     const tail = model.suffix
       ? { ics: "/event.ics", png: "/card.png", svg: "/card.svg" }[model.suffix]

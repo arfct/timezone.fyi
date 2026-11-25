@@ -1,25 +1,28 @@
 // Turns a parsed path into an event: zones resolved, dates pinned, the start
 // and end as instants, and the text each zone shows.
 import { clockText, dateText, MONTHS, offsetText, WEEKDAYS } from "../../public/assets/shared.js";
+import { sunSky } from "../../public/assets/sun.js";
+import { coordsOf } from "./coords.js";
 import { dayOffset, formatDayOffset } from "./day-offset.js";
 import { placeTimes } from "./parse-time.js";
 import { canonicalZone, dateOfDayNumber, dayNumber, offsetAt, wallAt } from "./tz.js";
-import { resolveCodes } from "./zone-lookup.js";
+import { resolvePlaces } from "./zone-lookup.js";
 
 const OFFSET_RE = /^(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?$/i;
 
 // in: zone codes as typed
-// out: [{ code, name, zone }] or { error }. zone is an IANA name or a fixed
-//      offset in minutes; name is what the page shows ("NYC", "NEW YORK").
+// out: [{ code, name, zone, coords }] or { error }. zone is an IANA name or a
+//      fixed offset in minutes; name is what the page shows ("NYC", "NEW
+//      YORK"); coords is { lat, lon }, or null for a bare UTC offset.
 export function resolveZones(codes) {
-  const values = resolveCodes(codes);
+  const readings = resolvePlaces(codes);
   const zones = [];
   for (let i = 0; i < codes.length; i++) {
     const code = codes[i];
-    const value = values[i];
+    const { value, kind } = readings[i];
     const name = code.split("/").pop().replace(/_/g, " ").toUpperCase();
     if (typeof value === "number") {
-      zones.push({ code, name, zone: value * 60 });
+      zones.push({ code, name, zone: value * 60, coords: coordsOf(code, kind, null) });
       continue;
     }
     const offset = value.match(OFFSET_RE);
@@ -29,7 +32,7 @@ export function resolveZones(codes) {
         return {
           error: `"${code}" isn't a UTC offset. Offsets go up to 14 hours: gmt+14.`,
         };
-      zones.push({ code, name, zone: offset[1] === "-" ? -minutes : minutes });
+      zones.push({ code, name, zone: offset[1] === "-" ? -minutes : minutes, coords: null });
       continue;
     }
     const zone = canonicalZone(value);
@@ -37,7 +40,7 @@ export function resolveZones(codes) {
       return {
         error: `"${code}" isn't a time zone, city or airport. Try nyc, lhr or Europe/Paris.`,
       };
-    zones.push({ code, name, zone });
+    zones.push({ code, name, zone, coords: coordsOf(code, kind, zone) });
   }
   return zones;
 }
@@ -215,13 +218,18 @@ export function resolveEvent(model, now, options = {}) {
   event.dateIso = isoDate(startWall);
   if (event.recur) event.recurText = recurrenceText(event.recur, event.anchor);
 
-  event.zones = zones.map(({ code, name, zone }) => {
+  event.zones = zones.map(({ code, name, zone, coords }) => {
     const wall = wallAt(zone, event.start);
     const offset = offsetAt(zone, event.start);
     const row = {
       code,
       name,
       zone,
+      // Where the zone is, and the sun's state there when the event starts:
+      // what the gradient is drawn from. All undefined for a bare offset.
+      lat: coords?.lat,
+      lon: coords?.lon,
+      sun: coords ? sunSky(event.start, coords.lat, coords.lon) : undefined,
       offset,
       offsetText: offsetText(offset),
       // "New York" under "NYC"; nothing when it would repeat the name

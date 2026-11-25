@@ -259,7 +259,7 @@ expect(
 );
 expect(
   "the image draws the sky with P3 values",
-  eventCard(read("/2026-12-03/10am,nyc")).includes(skyAt(10 * 60).topP3Hex),
+  eventCard(read("/2026-12-03/10am,gmt-5")).includes(skyAt(10 * 60).topP3Hex),
   true,
 );
 expect(
@@ -300,7 +300,9 @@ expect(
 const twoZones = page("/2026-12-03/10am,nyc,tok");
 expect(
   "buttons start with the last zone's colours",
-  twoZones.includes(`<body class="event" style="--top:${skyAt(24 * 60).top}`),
+  twoZones.includes(
+    `<body class="event" style="--top:${skyAt(0, read("/2026-12-03/10am,nyc,tok").zones[1].sun).top}`,
+  ),
   true,
 );
 expect("a stripe names the text colour that reads on it", /--on:#ffffff/.test(twoZones), true);
