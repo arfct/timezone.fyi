@@ -1,5 +1,6 @@
 // Shared by the Worker (bundled) and the browser (served as a static module):
-// the 24-hour sky gradient and how a clock time is written.
+// the 24-hour sky gradient and how a clock time is written. sun.js says which
+// part of the gradient a place is under.
 
 // Two colours per hour, top then bottom of the gradient, from midnight.
 // Noon is the yellow to pale green that 10am used to be; orange starts at
@@ -150,27 +151,44 @@ const p3 = (c) => `color(display-p3 ${c.map((v) => +v.toFixed(4)).join(" ")})`;
 // P3 components written as a hex colour, for an image tagged as Display P3
 const p3Hex = (c) => hex(c.map((v) => v * 255));
 
-// in: minutes after midnight, local time
-// out: { top, bottom } gradient colours in sRGB hex, blended between the hour
-//      before and the hour after; topP3 and bottomP3, the same in CSS
-//      Display P3; topP3Hex and bottomP3Hex, the P3 values written as hex for
-//      the P3-tagged image; and `dark`: true when light text reads better.
-export function skyAt(minutes) {
-  const m = ((minutes % 1440) + 1440) % 1440;
-  const hour = Math.floor(m / 60);
-  const t = (m % 60) / 60;
+// The gradient at a palette hour (0 to 24, fractions blended between the
+// hour before and the hour after), as numbers: sRGB 0 to 255, P3 0 to 1
+function paletteAt(hours) {
+  const h = ((hours % 24) + 24) % 24;
+  const hour = Math.floor(h);
+  const t = h - hour;
   const a = SKY[hour];
   const b = SKY[(hour + 1) % 24];
-  const top = mix(rgb(a[0]), rgb(b[0]), t);
-  const bottom = mix(rgb(a[1]), rgb(b[1]), t);
+  const a3 = SKY_P3[hour];
+  const b3 = SKY_P3[(hour + 1) % 24];
+  return [
+    mix(rgb(a[0]), rgb(b[0]), t),
+    mix(rgb(a[1]), rgb(b[1]), t),
+    mix(a3[0], b3[0], t),
+    mix(a3[1], b3[1], t),
+  ];
+}
+
+// in: minutes after midnight, local time; and, where the place is known, the
+//     sun's state there from sunSky (sun.js): { hour, other, mix }. With it
+//     the colours follow the sun and the clock time is ignored.
+// out: { top, bottom } gradient colours in sRGB hex; topP3 and bottomP3, the
+//      same in CSS Display P3; topP3Hex and bottomP3Hex, the P3 values written
+//      as hex for the P3-tagged image; and `dark`: true when light text reads
+//      better.
+export function skyAt(minutes, sun) {
+  let [top, bottom, top3, bottom3] = paletteAt(sun ? sun.hour : minutes / 60);
+  if (sun?.mix > 0) {
+    const other = paletteAt(sun.other);
+    top = mix(top, other[0], sun.mix);
+    bottom = mix(bottom, other[1], sun.mix);
+    top3 = mix(top3, other[2], sun.mix);
+    bottom3 = mix(bottom3, other[3], sun.mix);
+  }
   // Text sits around the middle of the gradient. Light text wins when its
   // contrast against the middle colour is higher than dark text's.
   const l = luminance(mix(top, bottom, 0.5));
   const dark = 1.05 / (l + 0.05) > (l + 0.05) / 0.05;
-  const a3 = SKY_P3[hour];
-  const b3 = SKY_P3[(hour + 1) % 24];
-  const top3 = mix(a3[0], b3[0], t);
-  const bottom3 = mix(a3[1], b3[1], t);
   return {
     top: hex(top),
     bottom: hex(bottom),
@@ -294,9 +312,10 @@ const INK = "#0d1117";
 // One zone's card. The Worker renders these; the browser re-renders them for a
 // live clock and adds one for the viewer's own zone.
 // in: { name, place, offset (minutes), minutes, endMinutes?, dayOffset,
-//       endDayOffset?, dayText?, you? } and h24
+//       endDayOffset?, dayText?, you?, sun? } and h24. sun is the sun's state
+//       there (sunSky); without it the colours follow the clock.
 export function zoneCard(z, h24) {
-  const sky = skyAt(z.minutes);
+  const sky = skyAt(z.minutes, z.sun);
   const range = z.endMinutes !== undefined;
   const sign = (n) => `${n > 0 ? "+" : "−"}${Math.abs(n)}`;
   const day = (n) => (n ? `<sup class="day">${sign(n)}</sup>` : "");
