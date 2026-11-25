@@ -146,7 +146,7 @@ Every link except a live clock has `<link>/event.ics`, served as `text/calendar`
 
 Screenshots, before and after: see the previewer link in the report that came with this branch. The contact sheet is `contact.png`.
 
-**Kept:** the identity. Each zone is a panel filled with the sky gradient for its local hour, from the 24 colour pairs in `netlify/common.js`, now interpolated by the minute.
+**Kept:** the identity. Each zone is a panel filled with the sky gradient, from the 24 colour pairs in `netlify/common.js`, now interpolated by the minute. Which part of the gradient a zone gets follows the sun where the zone is, not its clock: section 13.
 
 **Colour:** the sky is drawn in Display P3. `scripts/build-sky-p3.mjs` derives `SKY_P3` from the sRGB pairs: each colour keeps its OKLCH lightness and hue, with chroma raised 30% and then cut back to fit P3. The page uses it through `@supports (color: color(display-p3 …))` and keeps the sRGB pairs as the fallback. The link-preview PNG is drawn with the P3 values and carries a Display P3 ICC profile (iCCP chunk, `src/lib/png-p3.js`, profile CC0 from Compact-ICC-Profiles, 480 bytes). A viewer that ignores the profile shows those values as sRGB, which reads a little more saturated than the sRGB palette.
 
@@ -168,7 +168,7 @@ Screenshots, before and after: see the previewer link in the report that came wi
 
 - Inter Medium for all text, sent to og-svg with each render (Inter stands in for the system font, which can't be bundled). Inter's contextual alternates centre the colon. Text is fitted with the font's advance widths (`src/fonts/inter-metrics.json`) so nothing overflows a column, and every cell uses the same time size so the times line up.
 - am/pm is one lowercase letter at half size, as on the page. Titles, `og:title` and calendar text keep `am`/`pm` in full. `test/render.test.js` checks that every character in eight sample cards and the home card is in the font, and that characters the font lacks (CJK in a label) are dropped before drawing.
-- 1 to 4 zones are columns; 5 to 8 are two rows; more than 8 shows 7 and "+N more". A labelled or dated event gets a dark band with the label and date. The day marker is spelled out ("Thu 26 Nov (+1)"). The home image is the 24 hours of stripes with the name and the tagline set on them, no panel behind it.
+- 1 to 4 zones are columns; 5 to 8 are two rows; more than 8 shows 7 and "+N more". A labelled or dated event gets a dark band with the label and date. The day marker is spelled out ("Thu 26 Nov (+1)"). The home image is the 24 hours of stripes as drawn, for no place and no season, with the name and the tagline set on them, no panel behind it.
 
 **Not done:** an LCD or "clock face" style; the analogue clock icon the old page showed above each zone; any motion.
 
@@ -186,7 +186,8 @@ A request for an undated link's `card.png` without `?d=` redirects to the one wi
 
 | Response | Cache-Control |
 | --- | --- |
-| page for a dated event; home page | `public, max-age=3600` |
+| page for a dated event | `public, max-age=3600` |
+| home page | `private, max-age=3600` when the Worker can place the visitor (section 13), else `public, max-age=3600` |
 | page for an undated, repeating or live link | `no-cache` |
 | `event.ics` | `public, max-age=3600` |
 | `card.png` | `public, max-age=604800` |
@@ -312,3 +313,86 @@ Also still to do, and not in this branch: `CLAUDE.md` from the org template (iss
 8. **Should the image keep the route through og-svg, or bundle resvg in this Worker?** og-svg keeps this Worker at 410 KiB and shares one renderer; bundling removes the dependency.
 9. **Add the "Count down to this" link once clock.app #13 ships?**
 10. **Who does the Netlify and domain steps in section 10, and when?**
+11. **Section 13: are the polar colours right, and should GMT have a place?** A polar noon in twilight is a blend of the dawn blue and the dusk pink; a midnight sun stays yellow. GMT and bare offsets follow the clock.
+12. **Section 13: may a home page that carries the visitor's rounded coordinates be sent `private`?** The alternative is a second request.
+
+## 13. The sky follows the sun
+
+Nicholas asked for the gradient to show the true state of the sun at each place: Reykjavik at 9pm is orange in June and night in December. The code is `public/assets/sun.js`, shared by the Worker and the browser, with no dependencies. The screenshots are in the previewer link that came with this change.
+
+### The sun's position
+
+`solar(ms)` gives the sun's declination and the equation of time from the date, with the low-precision method NOAA's solar calculator uses (Meeus, Astronomical Algorithms, chapter 25). `sunAt(ms, lat, lon)` adds the hour angle and gives the elevation. `sunEvents(ms, lat, lon)` gives the day's solar noon, sunrise and sunset (sun's centre 0.833° below the horizon) and civil dawn and dusk (6° below), and says when the day is a polar day or a polar night.
+
+Accuracy: checked against PyEphem 4.2, an independent ephemeris, for 20 place-days in 2026 (New York, London, Reykjavik, Singapore, Tromsø, Sydney and Longyearbyen at equinox and solstices). Every event was within 6 seconds, and the elevation at 12:00 UTC within 0.006°. Each polar day and polar night was reported as one. `test/sun.test.js` holds the reference values and fails beyond 30 seconds. I did not compare against NOAA's own calculator page.
+
+### Where a zone is
+
+Best first (`src/lib/coords.js`):
+
+1. **A place with its own coordinates.** Every airport and city code (9,291) has its latitude and longitude from lxndrblz/Airports, the source the zone map already uses. A city code without a row of its own takes the mean of its airports. Nine nicknames (`sf`, `tok`, `cam` and others) are set by hand. So `sea` and `lax` share a zone and have different skies.
+2. **The zone's principal place.** For zone names, and for abbreviations through the zone they stand for (`pst` is Los Angeles, `jst` is Tokyo, `cet` is Paris). The table is 549 names from the time zone database's `zone.tab`, `zone1970.tab` and `backward` files.
+3. **Nothing.** `gmt`, `utc` and bare offsets (`gmt+5:30`) have no place, so their stripe keeps the clock's colours. That equals the sun over the offset's own meridian on a day with sunrise at six, in no season. GMT is left out on purpose: it is written for plain UTC as often as for Britain.
+
+Coordinates are rounded to 0.1°, about 11 km, which the sun crosses in 24 seconds. `scripts/build-coords.mjs` writes both tables and does not touch the zone map.
+
+**Principal city or a true average?** Nicholas wrote "the average for that zone". The database's rule is that a zone's principal place is its most populous city, so it is where the largest share of the zone's people are. A population-weighted mean would need zone boundaries and a population grid at build time (tens of megabytes), and for a wide zone it can land between cities, where few people live. No single point is right for a zone that spans 20° of latitude; a city or airport code is the way to be exact. I kept the principal city. The table is 16,804 bytes.
+
+### From the sun to the gradient
+
+The 24 colour pairs stay as Nicholas tuned them. A place and an instant pick a palette hour by the sun, in a straight line between these marks:
+
+| Sun | Palette hour |
+| --- | --- |
+| solar midnight | 0 |
+| civil dawn (6° below) | 5.5 |
+| sunrise | 6.5 |
+| solar noon | 12 |
+| sunset | 18.5 |
+| civil dusk (6° below) | 19.5 |
+| solar midnight | 24 |
+
+**Events, not elevation alone.** Elevation alone can't tell morning from evening, and the palette has different colours for each. It would also paint a London winter noon, with the sun 15° up, in late-afternoon orange. With the marks above, every day runs through the whole palette in order, stretched or squeezed to the day's length.
+
+**The reference day.** At 40° north at the March equinox the palette hour stays within 0.85 hours of the clock's (mean 0.21), so that day looks as the clock-based page did. The largest gap is just after civil dusk, which the sun reaches at 18:31 and the marks put at 19.5.
+
+**When the sun misses a mark.** The end of the line is then set by how high or low the sun gets that day. A noon sun under 30° stops short of the full midday colours (London in December peaks at palette hour 10.4 before noon and 13.9 after). A midnight sun less than 30° down stops short of full night. In polar night the noon colours are twilight or night, by how far down the sun is; in polar day, once the midnight sun is 2° up, the midnight colours stay in the day's range (palette hours 9 to 15.5). Morning and evening colours then meet without passing through midday or midnight, so one fades into the other around that moment, over up to six hours either side. Tromsø at noon on 21 December is half dawn blue and half dusk pink. The colours never jump: across a year at ten latitudes, no channel moves more than 28 of 255 in five minutes (a test).
+
+Two weak spots. For a few days either side of the polar night, with the noon sun between the horizon and 2°, the blend of morning teal and evening orange is a dull olive for about an hour. And a white night (Reykjavik in June at midnight) is a greyish mauve.
+
+### Where it applies
+
+- **Event pages.** The Worker computes each zone's sun at the event's start and paints the stripe. A range is coloured by its start, as before.
+- **Live clocks and the viewer's card.** The page's data carries each zone's `lat` and `lon`, and `app.js` uses the same `sun.js`. The viewer's own zone has no entry in the page, so the script fetches the zone table (`/assets/zone-coords.js`, a static file) the first time it needs it.
+- **Buttons** copy the nearest stripe, so they follow.
+- **Link-preview images.** Same sun, computed in the Worker. The image's URL already carries the date or minute, so cached images stay right. The cache version is now 10.
+- **Calendar files** are unaffected.
+- **The home image** stays the clock's 24 hours.
+
+### The home page and the visitor's place
+
+The 24 stripes are each hour of today where the visitor is. The Worker reads `request.cf.latitude`, `longitude` and `timezone`, Cloudflare's reading of the request's address: city level, no permission prompt. It rounds them to 0.1°, draws the stripes, and writes the coordinates on the strip (`data-lat`, `data-lon`). Without coordinates it uses the principal place of `cf.timezone`. Without either, the page is the clock's hours and the browser redraws the stripes for the principal place of its own time zone. The browser's geolocation prompt is never used.
+
+**Caching.** A page drawn for one visitor's place must not be served to another. The home page is sent `Cache-Control: private, max-age=3600` when it carries a place, so the visitor's browser keeps it and no shared cache may. This costs nothing today: the Worker already runs for every home request, and HTML is not stored with the Cache API. If the home page is ever cached at the edge, the place has to move out of it, into a small uncached `/sun.json` that the script fetches. That adds a request per visit, which is why I did not do it now.
+
+### Cost
+
+Local timing in Node, per call: one `sunSky` is 0.2 microseconds. An event page is 0.095 ms before and after. The home page went from 0.04 to 0.06 ms.
+
+On the deployed prototype with `wrangler tail`, the previous commit and this one each deployed and measured twice, about 10 to 24 requests of each kind per run:
+
+| Request | Before, median CPU (two runs) | After |
+| --- | --- | --- |
+| event page | 3.5 and 1 ms | 3 and 2 ms |
+| `card.png`, rendered (this Worker only) | 6 and 4.5 ms | 6 and 3 ms |
+| home page | 1 and 1 ms | 3 and 1.5 ms |
+
+The runs differ from each other by more than the change does. For event pages and images I can't measure a difference. The home page may cost about 1 ms more.
+
+Bundle, from `wrangler deploy`: 416.98 KiB (121.94 KiB gzipped) before, 507.28 KiB (175.69 KiB) after. Most of the 90 KiB is the airport coordinates, 65 KiB as one packed string searched by halving. Startup time was reported as 5 to 9 ms across deploys of both versions. The browser loads `sun.js` (8.7 kB) with every page, and the zone table only when it needs the viewer's place.
+
+### Not verified
+
+- No comparison with NOAA's calculator page itself, and no dates outside 2026.
+- The browser path was checked in headless Chrome only, with its zone reported as Los Angeles.
+- `request.cf` coordinates were seen for one address (this Mac's). A request with no `cf.latitude` was only exercised through the browser fallback on a local copy of the page.

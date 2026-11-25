@@ -61,6 +61,7 @@ src/
     parse-time.js  → reads the time or range (10pm-1am, 1-2pm, 22:30, 10am+45m)
     zone-lookup.js → turns zone codes into offsets or IANA zones (abbreviations, aliases, airports)
     event.js       → resolves a parsed path at a given moment: the date, each zone's time
+    coords.js      → where a zone code is on the Earth, for the sun's position there
     tz.js          → time zone arithmetic on the runtime's own Intl data
     ics.js         → the calendar file and the Google and Outlook links
     vtimezone.js   → a zone's clock-change rules for the calendar file
@@ -103,6 +104,8 @@ npm run build:airports
 ```
 
 The build script fetches `airports.csv` and `citycodes.csv` directly from GitHub, plus [OurAirports](https://ourairports.com/data/) `airports.csv` for airport size. It also writes `src/data/major-places.json`: large airports and metro codes. After regenerating, run `npm test`. It fails if a zone abbreviation now matches a major place that isn't classified in `collisions` in `src/lib/zone-lookup.js`.
+
+The sky colours follow the sun at each place (`public/assets/sun.js`). `node scripts/build-coords.mjs` writes where places are: `public/assets/zone-coords.js` from the time zone database's `zone.tab`, and `src/data/airport-coords.json` from the same airport source, for the codes already in the zone map. Run it after `build:airports`.
 
 A refresh can remove codes and change zones. lxndrblz/Airports drops codes that aren't in IATA's public code directory, and moves a code to its new airport when IATA reassigns it: `RSI` was Río Sidra, Panama, and is now Red Sea International, Saudi Arabia. Before committing, check each changed zone against the airport's coordinates in OurAirports. Corrections to upstream zones go in `placeAliases` in `src/lib/zone-lookup.js`.
 
