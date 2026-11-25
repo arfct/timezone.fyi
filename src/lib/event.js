@@ -13,7 +13,7 @@ const OFFSET_RE = /^(?:GMT|UTC)([+-])(\d{1,2})(?::?(\d{2}))?$/i;
 // in: zone codes as typed
 // out: [{ code, name, zone, coords }] or { error }. zone is an IANA name or a
 //      fixed offset in minutes; name is what the page shows ("NYC", "NEW
-//      YORK"); coords is { lat, lon }, or null for a bare UTC offset.
+//      YORK"); coords is { lat, lon }, or null for an offset no zone uses.
 export function resolveZones(codes) {
   const readings = resolvePlaces(codes);
   const zones = [];
@@ -22,7 +22,7 @@ export function resolveZones(codes) {
     const { value, kind } = readings[i];
     const name = code.split("/").pop().replace(/_/g, " ").toUpperCase();
     if (typeof value === "number") {
-      zones.push({ code, name, zone: value * 60, coords: coordsOf(code, kind, null) });
+      zones.push({ code, name, zone: value * 60, coords: coordsOf(code, kind, value * 60) });
       continue;
     }
     const offset = value.match(OFFSET_RE);
@@ -32,7 +32,8 @@ export function resolveZones(codes) {
         return {
           error: `"${code}" isn't a UTC offset. Offsets go up to 14 hours: gmt+14.`,
         };
-      zones.push({ code, name, zone: offset[1] === "-" ? -minutes : minutes, coords: null });
+      const zone = offset[1] === "-" ? -minutes : minutes;
+      zones.push({ code, name, zone, coords: coordsOf(code, kind, zone) });
       continue;
     }
     const zone = canonicalZone(value);
@@ -40,7 +41,9 @@ export function resolveZones(codes) {
       return {
         error: `"${code}" isn't a time zone, city or airport. Try nyc, lhr or Europe/Paris.`,
       };
-    zones.push({ code, name, zone, coords: coordsOf(code, kind, zone) });
+    // A zone with no place of its own (UTC, Etc/GMT+5) is a fixed offset
+    const coords = coordsOf(code, kind, zone) ?? coordsOf(code, kind, offsetAt(zone, 0));
+    zones.push({ code, name, zone, coords });
   }
   return zones;
 }
@@ -226,7 +229,8 @@ export function resolveEvent(model, now, options = {}) {
       name,
       zone,
       // Where the zone is, and the sun's state there when the event starts:
-      // what the gradient is drawn from. All undefined for a bare offset.
+      // what the gradient is drawn from. All undefined for an offset no zone
+      // uses.
       lat: coords?.lat,
       lon: coords?.lon,
       sun: coords ? sunSky(event.start, coords.lat, coords.lon) : undefined,

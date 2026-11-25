@@ -7,9 +7,10 @@
 
 import { paletteHours, skyAt } from "../public/assets/sky.js";
 import { SUNRISE, sunAt, sunEvents, sunSky } from "../public/assets/sun.js";
-import { coordsOf } from "../src/lib/coords.js";
-import { resolveEvent } from "../src/lib/event.js";
+import { coordsOf, offsetCoordsOf } from "../src/lib/coords.js";
+import { resolveEvent, resolveZones } from "../src/lib/event.js";
 import { parsePath } from "../src/lib/parse-path.js";
+import { offsetAt } from "../src/lib/tz.js";
 import { resolvePlaces } from "../src/lib/zone-lookup.js";
 import { eventCard } from "../src/render/card.js";
 import { eventPage, homePage } from "../src/render/page.js";
@@ -406,9 +407,64 @@ expect("an abbreviation takes its zone's: PST", where("pst"), "34.1,-118.2");
 expect("…a fixed-offset one takes its stand-in's: PDT", where("pdt"), "34.1,-118.2");
 expect("…JST", where("jst"), "35.7,139.7");
 expect("IST with no other code is India, not Istanbul", where("ist"), "22.5,88.4");
-expect("GMT has no place", where("gmt"), "none");
-expect("UTC has no place", where("utc"), "none");
-expect("a bare offset has no place", where("gmt+5:30"), "none");
+
+console.log("\nWhere an offset is: the latitude most of its people live at");
+// As the event resolves it, for codes that name an offset and no place
+const stands = (code) => {
+  const [{ coords }] = resolveZones([code]);
+  return coords ? `${coords.lat},${coords.lon}` : "none";
+};
+// 00:00 by standard time is the British Isles, Portugal, Iceland and West
+// Africa. The 1° band with the most people in it is London's, 50.1 million
+// with its neighbours, ahead of West Africa's coast at 5° to 7° north (Nigeria is on +01:00).
+expect("GMT is southern England", stands("gmt"), "51.8,-1");
+expect(
+  "…and so are UTC and Etc/UTC",
+  [stands("utc"), stands("Etc/UTC")].join(" "),
+  "51.8,-1 51.8,-1",
+);
+expect("WET has a place of its own, Lisbon", stands("wet"), "38.7,-9.1");
+expect("+05:30 is northern India", stands("gmt+5:30"), "22.6,79.1");
+expect("+08:00 is eastern China", stands("utc+8"), "30.7,117.3");
+expect("−03:00 is São Paulo's latitude", stands("utc-3"), "-23.4,-46.6");
+expect("−05:00 is New York's", stands("gmt-5"), "40.8,-74");
+expect("an Etc zone is its offset: Etc/GMT+5 is −05:00", stands("Etc/GMT+5"), "40.8,-74");
+expect("an abbreviation that only names an offset: NDT, −02:30", stands("ndt"), "47.6,-52.7");
+expect("−12:00, which no zone keeps, takes its band of longitude", stands("gmt-12"), "-36.8,174.8");
+expect("an offset nobody keeps has no place", stands("gmt+7:15"), "none");
+expect("an abbreviation with a place keeps it: JST", stands("jst"), "35.7,139.7");
+// Every offset a zone keeps in 2026, in either season, and every whole hour
+const kept = new Set();
+for (let hour = -12; hour <= 14; hour++) kept.add(hour * 60);
+for (const zone of Intl.supportedValuesOf("timeZone"))
+  for (const month of [0, 6]) kept.add(offsetAt(zone, Date.UTC(2026, month, 15, 12)));
+expect(
+  `all ${kept.size} offsets from −12:00 to +14:00 have a place`,
+  [...kept].filter((minutes) => !offsetCoordsOf(minutes)).join(),
+  "",
+);
+expect(
+  "…the half and quarter hours among them",
+  [-570, -210, -150, 210, 270, 330, 345, 390, 525, 570, 630, 765, 825].every(offsetCoordsOf),
+  true,
+);
+expect(
+  "…each within the world, to 0.1°",
+  [...kept].every((minutes) => {
+    const { lat, lon } = offsetCoordsOf(minutes);
+    return (
+      Math.abs(lat) <= 90 && Math.abs(lon) <= 180 && Number.isInteger(Math.round(lat * 1e6) / 1e5)
+    );
+  }),
+  true,
+);
+// Longitude within 30° of the offset's own meridian, except across the date
+// line and where a country keeps one time over a wide span
+const astray = [...kept].filter((minutes) => {
+  const { lon } = offsetCoordsOf(minutes);
+  return Math.abs(((((lon - minutes / 4) % 360) + 540) % 360) - 180) > 30;
+});
+expect("…and near its own meridian", astray.join(), "");
 const everyZone = Intl.supportedValuesOf("timeZone").filter(
   (zone) => !coordsOf(zone, undefined, zone),
 );
@@ -452,8 +508,17 @@ expect(
   eventCard(june).includes(skyAt(june.zones[0].minutes, june.zones[0].sun).topP3Hex),
   true,
 );
-const offsets = read("/2026-06-21/9pm,gmt+1,utc");
-expect("a bare offset has no sun", offsets.zones[0].sun, undefined);
+const placed = read("/2026-06-21/9pm,gmt+1,utc");
+expect(
+  "a bare offset has the sun of the place that stands for it: civil twilight at 9pm in June",
+  [
+    placed.zones[0].sun.elevation < 0 && placed.zones[0].sun.elevation > -6,
+    /"lat":51.4,"lon":8.3/.test(eventPage(placed, ORIGIN, "")),
+  ].join(),
+  "true,true",
+);
+const offsets = read("/2026-06-21/9pm,gmt+7:15,gmt+7:15");
+expect("an offset nobody keeps has no sun", offsets.zones[0].sun, undefined);
 expect(
   "…so its stripe has the clock's colours",
   eventPage(offsets, ORIGIN, "").includes(`--top:${skyAt(21 * 60).top};`),

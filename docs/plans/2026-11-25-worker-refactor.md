@@ -332,7 +332,8 @@ Best first (`src/lib/coords.js`):
 
 1. **A place with its own coordinates.** Every airport and city code (9,291) has its latitude and longitude from lxndrblz/Airports, the source the zone map already uses. A city code without a row of its own takes the mean of its airports. Nine nicknames (`sf`, `tok`, `cam` and others) are set by hand. So `sea` and `lax` share a zone and have different skies.
 2. **The zone's principal place.** For zone names, and for abbreviations through the zone they stand for (`pst` is Los Angeles, `jst` is Tokyo, `cet` is Paris). The table is 549 names from the time zone database's `zone.tab`, `zone1970.tab` and `backward` files.
-3. **Nothing.** `gmt`, `utc` and bare offsets (`gmt+5:30`) have no place, so their stripe keeps the clock's colours. That equals the sun over the offset's own meridian on a day with sunrise at six, in no season. GMT is left out on purpose: it is written for plain UTC as often as for Britain.
+3. **The place that stands for an offset.** `gmt`, `utc`, bare offsets (`gmt+5:30`, `utc-3`), `Etc` zones and abbreviations that only name an offset (`ndt`) take the latitude where most people on that offset live. See section 15. In the first version these had no place and kept the clock's colours.
+4. **Nothing.** An offset nobody keeps (`gmt+7:15`) has no place, so its stripe keeps the clock's colours.
 
 Coordinates are rounded to 0.1°, about 11 km, which the sun crosses in 24 seconds. `scripts/build-coords.mjs` writes both tables and does not touch the zone map.
 
@@ -487,3 +488,70 @@ Bundle, from `wrangler deploy`: 507.28 KiB (175.69 KiB gzipped) before, 515.59 K
 - The look was checked in headless Chrome screenshots, which are sRGB. I have not seen the P3 colours on a P3 display.
 - The glow's colour and strength are my choice from the anchors. Nobody has looked at them in a real Swedish winter.
 - The southern hemisphere was covered by the tests' sweep (to 70° south) and not by screenshots.
+
+## 15. A place for each bare offset
+
+Nicholas asked that a time zone with no latitude of its own take the latitude where most of the people in its strip live, worked out one offset at a time. This applies to `gmt`, `utc`, bare offsets, `Etc` zones, and abbreviations that only name an offset. They used to keep the clock's colours. Now `gmt` in December has a short northern day and `utc-3` has a southern summer.
+
+`scripts/build-offset-coords.mjs` writes `src/data/offset-coords.json` (40 offsets, about 1 kB). For each offset on its own:
+
+1. **The strip** is every city whose time zone has that offset as its standard time in 2026, the smaller of its January and July offsets. I used standard time and not the current offset, so the table does not change with the season. An offset that zones keep only in summer (−02:30, +13:45) takes the cities on it then. An offset no zone keeps (−12:00) takes the cities within 7.5° of its meridian, offset times 15°. A zone with no city in the data (the Line Islands, the Marquesas) counts as one person at its principal place, so it only decides a strip that is otherwise empty.
+2. **The latitude.** City populations are added up in 1° bins of latitude, and each bin is counted with its two neighbours. The bin with the most is the peak. The latitude is the population-weighted median of the cities in the peak bin and its neighbours.
+3. **The longitude** is the population-weighted median of the same cities. Both are rounded to 0.1°.
+
+Cities are GeoNames `cities15000` (https://download.geonames.org/export/dump/cities15000.zip, CC BY 4.0), fetched on 2026-11-25: every city of 15,000 people or more with its time zone. The script downloads it and does not keep it.
+
+| Offset | Latitude | Longitude | Largest city in the peak band | Strip |
+| --- | --- | --- | --- | --- |
+| −12:00 | -36.8 | 174.8 | Auckland, NZ | longitude band |
+| −11:00 | -14.3 | -170.7 | Pago Pago, AS | standard time |
+| −10:00 | 21.3 | -157.9 | Honolulu, US | standard time |
+| −09:30 | -9 | -139.5 | Pacific/Marquesas (the zone's own place, no city in the data) | standard time |
+| −09:00 | 61.2 | -149.9 | Anchorage, US | standard time |
+| −08:00 | 33.9 | -117.9 | Los Angeles, US | standard time |
+| −07:00 | 33.3 | -111.8 | Phoenix, US | standard time |
+| −06:00 | 19.4 | -99.1 | Mexico City, MX | standard time |
+| −05:00 | 40.8 | -74 | New York City, US | standard time |
+| −04:00 | 10.2 | -67.5 | Caracas, VE | standard time |
+| −03:30 | 47.6 | -52.7 | St. John's, CA | standard time |
+| −03:00 | -23.4 | -46.6 | São Paulo, BR | standard time |
+| −02:30 | 47.6 | -52.7 | St. John's, CA | summer time only |
+| −02:00 | 64.2 | -51.7 | Nuuk, GL | standard time |
+| −01:00 | 14.9 | -23.5 | Praia, CV | standard time |
+| +00:00 | 51.8 | -1 | London, GB | standard time |
+| +01:00 | 51.4 | 8.3 | Berlin, DE | standard time |
+| +02:00 | 31.1 | 31.2 | Cairo, EG | standard time |
+| +03:00 | 41 | 28.9 | Istanbul, TR | standard time |
+| +03:30 | 35.7 | 51.4 | Tehran, IR | standard time |
+| +04:00 | 25.1 | 55.3 | Dubai, AE | standard time |
+| +04:30 | 34.5 | 69.2 | Kabul, AF | standard time |
+| +05:00 | 31.6 | 73.7 | Lahore, PK | standard time |
+| +05:30 | 22.6 | 79.1 | Ahmedabad, IN | standard time |
+| +05:45 | 27.7 | 85.3 | Kathmandu, NP | standard time |
+| +06:00 | 23.7 | 90.4 | Dhaka, BD | standard time |
+| +06:30 | 16.8 | 96.2 | Yangon, MM | standard time |
+| +07:00 | -6.7 | 107.6 | Jakarta, ID | standard time |
+| +08:00 | 30.7 | 117.3 | Shanghai, CN | standard time |
+| +08:45 | -31.7 | 128.9 | Australia/Eucla (the zone's own place, no city in the data) | standard time |
+| +09:00 | 35.5 | 137.2 | Tokyo, JP | standard time |
+| +09:30 | -34.9 | 138.6 | Adelaide, AU | standard time |
+| +10:00 | -37.8 | 145 | Melbourne, AU | standard time |
+| +10:30 | -31.5 | 159.1 | Australia/LHI (the zone's own place, no city in the data) | standard time |
+| +11:00 | 47 | 142.7 | Yuzhno-Sakhalinsk, RU | standard time |
+| +12:00 | -36.8 | 174.8 | Auckland, NZ | standard time |
+| +12:45 | -43.9 | -176.5 | NZ-CHAT (the zone's own place, no city in the data) | standard time |
+| +13:00 | -13.8 | -171.8 | Apia, WS | standard time |
+| +13:45 | -43.9 | -176.5 | NZ-CHAT (the zone's own place, no city in the data) | summer time only |
+| +14:00 | 1.9 | -157.3 | Pacific/Kiritimati (the zone's own place, no city in the data) | standard time |
+
+Things to know when reading the table:
+
+- **00:00 is southern England, not West Africa.** The strip is the British Isles, Portugal, Iceland and West Africa from Senegal to Ghana. London's band has 50.1 million people with its neighbours, more than any band on the West African coast. Nigeria is on +01:00.
+- **+01:00 is Germany's latitude** (51.4° north): the band from the Netherlands to Poland holds 83 million, more than the band of Lagos.
+- **+05:30 is 22.6° north**, the band of Kolkata and Ahmedabad across the middle of India, and the longitude between them. That is south of Delhi.
+- **+08:00 is 30.7° north, 117.3° east**: the Yangtze band of eastern China, Shanghai's.
+- **Summer time moves several strips.** Counting every city that is on an offset at any time of year, −04:00 would be New York and not Caracas, +02:00 Berlin and not Cairo, +03:00 Cairo and not Istanbul. The script prints both. Standard time is what a bare offset most often means.
+- **+11:00 is Sakhalin** and +13:00 is Samoa. Few people keep these as standard time. With summer time counted they would be Melbourne and Auckland.
+- An abbreviation with a zone of its own keeps that zone's place: `wet` is Lisbon, `jst` is Tokyo.
+
+Tests: every offset any zone keeps in 2026 and every whole hour from −12:00 to +14:00 has an entry, half and quarter hours included, and each is within 30° of its own meridian. The bundle grew from 515.59 to 517.22 KiB.

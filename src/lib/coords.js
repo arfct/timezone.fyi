@@ -4,11 +4,14 @@
 //      of the nicknames below
 //   2. the zone's principal place (zone-coords.js): for zone names, and for
 //      abbreviations through the zone they stand for
-//   3. nothing, for a bare UTC offset (gmt+5:30, utc, gmt): the sky then
-//      follows the clock, which is the sun over the offset's own meridian on a
-//      day with sunrise at six
+//   3. for a bare UTC offset (gmt+5:30, utc, gmt) and an abbreviation that
+//      only names one (wet, ndt): the place where most people on that offset
+//      live (offset-coords.json, built by scripts/build-offset-coords.mjs)
+//   4. nothing, for an offset no zone uses (gmt+7:15): the sky then follows
+//      the clock
 import zoneCoords from "../../public/assets/zone-coords.js";
 import airportCoords from "../data/airport-coords.json" with { type: "json" };
+import offsetCoords from "../data/offset-coords.json" with { type: "json" };
 import { abbreviationPlaces } from "./zone-lookup.js";
 
 // Nicknames and city codes that aren't in the airport data (placeAliases in
@@ -60,8 +63,16 @@ export function zoneCoordsOf(name) {
   return lowerCased.get(name.toLowerCase()) ?? null;
 }
 
+// in: a UTC offset in minutes, east positive
+// out: { lat, lon } of the place that stands for that offset, or null
+export function offsetCoordsOf(minutes) {
+  const found = offsetCoords.coords[minutes];
+  return found ? { lat: found[0], lon: found[1] } : null;
+}
+
 // in: a zone code as typed, how it read ("place", "zone" or undefined, from
-//     resolvePlaces) and the zone it resolved to (an IANA name or a number)
+//     resolvePlaces) and the zone it resolved to: an IANA name, or a fixed
+//     offset in minutes
 // out: { lat, lon } or null
 export function coordsOf(code, kind, zone) {
   const upper = code.toUpperCase();
@@ -69,5 +80,6 @@ export function coordsOf(code, kind, zone) {
     (kind === "place" ? (ALIAS_COORDS[upper] ?? airportCoordsOf(upper)) : null) ??
     zoneCoordsOf(zone) ??
     (kind === "zone" ? zoneCoordsOf(abbreviationPlaces[upper]) : null);
-  return found ? { lat: found[0], lon: found[1] } : null;
+  if (found) return { lat: found[0], lon: found[1] };
+  return typeof zone === "number" ? offsetCoordsOf(zone) : null;
 }

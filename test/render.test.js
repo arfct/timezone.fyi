@@ -269,7 +269,7 @@ expect(
 );
 expect(
   "the image draws the sky with P3 values",
-  eventCard(read("/2026-12-03/10am,gmt-5")).includes(skyAt(10 * 60).topP3Hex),
+  eventCard(read("/2026-12-03/10am,gmt+7:15")).includes(skyAt(10 * 60).topP3Hex),
   true,
 );
 expect(
