@@ -167,6 +167,10 @@ export function eventPage(event, origin, image) {
     start: event.start,
     end: event.end,
     date: event.live ? undefined : event.date,
+    // When the Worker would answer with another event, which a widget's
+    // timeline stops at (app.js)
+    floating: event.floating,
+    recur: event.recur,
     // lat and lon are where the browser works out the sun for a live clock
     zones: event.zones.map((z) => ({
       name: z.name,

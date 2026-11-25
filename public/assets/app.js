@@ -2,6 +2,10 @@
 // the viewer's own zone, live clocks, the copy button and the link builder.
 // No requests to the Worker after the first load; times come from the
 // browser's Intl and the sky colours from sun.js.
+//
+// Opened with `#widget?…` in its address (Quicksilver's web widgets, see
+// widget.js), a page draws itself for the widget's size and for the moment
+// in the fragment in place of the clock, and lists the moments it changes.
 import {
   clockText,
   columnsFor,
@@ -13,8 +17,55 @@ import {
   zoneCard,
 } from "./shared.js";
 import { sunSky } from "./sun.js";
+import {
+  fixedTimeline,
+  hourlyTimeline,
+  isoUtc,
+  liveTimeline,
+  widgetContext,
+  widgetGrid,
+  widgetRelative,
+} from "./widget.js";
 
 const MINUTE = 60000;
+
+// The widget's context, or null for a page opened normally. Read once here
+// and again on each `hashchange` Quicksilver makes for a later moment.
+let widget = widgetContext(location.hash);
+// The moment the page shows: the widget's date, or now
+const moment = () => {
+  const ms = widget?.date.getTime();
+  return Number.isFinite(ms) ? ms : Date.now();
+};
+// What draws the page again for a widget's new moment
+const redraws = [];
+
+function widgetClasses() {
+  const html = document.documentElement;
+  for (const c of [...html.classList]) if (c.startsWith("w-")) html.classList.remove(c);
+  html.classList.add("widget", `w-${widget.family || "systemMedium"}`);
+}
+
+function setMeta(name, content) {
+  let meta = document.head.querySelector(`meta[name="${name}"]`);
+  if (!meta) {
+    meta = document.createElement("meta");
+    meta.name = name;
+    document.head.append(meta);
+  }
+  meta.content = content;
+}
+
+// The moments after this one the picture changes, when to draw the page
+// again, and what a tap on the widget opens: the page without the fragment
+function widgetMeta({ entries, policy }) {
+  setMeta("widget-timeline", entries.map(isoUtc).join(", "));
+  setMeta("widget-reload-policy", policy);
+  setMeta(
+    "widget-url",
+    document.querySelector('link[rel="canonical"]')?.href ?? location.href.split("#")[0],
+  );
+}
 
 // Date and clock time of the instant `ms` in `zone` (an IANA name, or minutes
 // east of UTC), plus the offset in minutes
@@ -90,8 +141,10 @@ function eventPage(event) {
 
   // A card for the viewer's own zone, unless a listed zone already shows the
   // same time
+  // Not in a widget: it has no room for another stripe, and its zones are
+  // the ones the link names
   const mine = Intl.DateTimeFormat().resolvedOptions().timeZone;
-  if (mine) {
+  if (mine && !widget) {
     const offset = wallAt(mine, event.start).offset;
     const shown = event.zones.some(
       (z) => z.zone === mine || wallAt(z.zone, event.start).offset === offset,
@@ -120,7 +173,7 @@ function eventPage(event) {
 
   let added = false;
   function draw() {
-    const now = Date.now();
+    const now = moment();
     if (event.live) event.start = Math.floor(now / MINUTE) * MINUTE;
     const first = wallAt(event.zones[0].zone, event.start);
     if (event.live) zones.innerHTML = event.zones.map((z) => card(z, event, first)).join("");
@@ -138,12 +191,18 @@ function eventPage(event) {
         .filter((z) => !z.you)
         .map((z) => `${clockText(wallAt(z.zone, event.start).minutes, event.h24)} ${z.name}`);
       if (!event.labelled) document.title = times.join(" · ");
-    } else {
+    } else if (!widget) {
       relative.textContent = relativeText(event.start, event.end, now);
     }
+    if (widget) widgetEvent(event, first, now);
   }
 
   draw();
+  if (widget) {
+    // A picture doesn't tick: each moment is drawn when Quicksilver asks
+    redraws.push(draw);
+    return;
+  }
   // Redraw at the top of each minute, and when the tab is shown again
   const tick = () => {
     setTimeout(
@@ -158,6 +217,59 @@ function eventPage(event) {
   document.addEventListener("visibilitychange", () => {
     if (!document.hidden) draw();
   });
+}
+
+// An event in a widget: as many stripes as the family has room for, a line
+// with the name or day and how far off it is, and its timeline
+function widgetEvent(event, first, now) {
+  const zones = document.getElementById("zones");
+  const grid = widgetGrid(widget.family, event.zones.length);
+  zones.classList.remove("many");
+  zones.style.setProperty("--cols", grid.cols);
+  zones.dataset.cols = grid.cols;
+  zones.querySelectorAll(".zone").forEach((el, i) => {
+    el.classList.toggle("w-off", i >= grid.shown);
+  });
+  document.documentElement.classList.toggle("w-live", !!event.live);
+
+  let caption = document.querySelector(".wcap");
+  if (!caption) {
+    caption = document.createElement("div");
+    caption.className = "wcap";
+    caption.innerHTML =
+      '<b class="wtitle"></b><span class="wsub"></span><span class="wrel"></span>';
+    document.querySelector(".stage").before(caption);
+  }
+  const heading = document.querySelector(".top h1")?.textContent ?? "";
+  const title = event.labelled
+    ? heading
+    : event.live
+      ? "Now"
+      : event.floating
+        ? "Today"
+        : dateText(event.date);
+  let sub = "";
+  if (event.live) sub = dateText(first, true);
+  else if (event.labelled) sub = event.floating ? "Today" : dateText(event.date, true);
+  caption.querySelector(".wtitle").textContent = title;
+  caption.querySelector(".wsub").textContent = sub;
+  caption.querySelector(".wrel").textContent = event.live
+    ? ""
+    : widgetRelative(event.start, event.end, now).text;
+
+  if (event.live) {
+    widgetMeta(liveTimeline(now));
+    return;
+  }
+  // When the Worker would answer with another event: a repeat once this one
+  // is over, an undated link at the next midnight in its first zone
+  let rollover;
+  if (event.recur) rollover = (event.end ?? event.start) + MINUTE;
+  else if (event.floating) {
+    const wall = wallAt(event.zones[0].zone, event.start);
+    rollover = Math.floor(event.start / MINUTE) * MINUTE + (1440 - wall.minutes) * MINUTE;
+  }
+  widgetMeta(fixedTimeline({ start: event.start, end: event.end, now, rollover }));
 }
 
 function copyButton() {
@@ -239,18 +351,46 @@ function builder(root) {
 // The home page's stripes are each hour of today where the visitor is. The
 // Worker draws them when it can place the visitor (data-lat); when it can't,
 // they're drawn here for the place of the browser's time zone.
+// In a widget they're drawn here for the widget's day, with its hour marked.
 async function homeStrip() {
   const strip = document.querySelector(".strip");
-  if (!strip || strip.dataset.lat) return;
-  const place = await myPlace();
-  if (!place) return;
-  const now = new Date();
-  const stripes = strip.querySelectorAll("i");
-  SKY.forEach((_, hour) => {
-    const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour).getTime();
-    stripes[hour].style.cssText = skyStyle(skyAt(hour * 60, sunSky(at, place.lat, place.lon)));
-  });
-  queuePaint();
+  if (!strip || (strip.dataset.lat && !widget)) return;
+  const html = document.documentElement;
+  // Quicksilver waits for this before it takes the picture
+  if (widget) html.setAttribute("data-widget-busy", "");
+  const place = strip.dataset.lat
+    ? { lat: +strip.dataset.lat, lon: +strip.dataset.lon }
+    : await myPlace();
+  const draw = () => {
+    const now = new Date(moment());
+    const stripes = strip.querySelectorAll("i");
+    if (place)
+      SKY.forEach((_, hour) => {
+        const at = new Date(now.getFullYear(), now.getMonth(), now.getDate(), hour).getTime();
+        stripes[hour].style.cssText = skyStyle(skyAt(hour * 60, sunSky(at, place.lat, place.lon)));
+      });
+    if (widget) {
+      stripes.forEach((el, hour) => {
+        el.classList.toggle("w-now", hour === now.getHours());
+      });
+      strip.dataset.day = dateText(
+        {
+          year: now.getFullYear(),
+          month: now.getMonth() + 1,
+          day: now.getDate(),
+          weekday: now.getDay(),
+        },
+        widget.family === "systemLarge",
+      );
+      widgetMeta(hourlyTimeline(now.getTime()));
+    }
+    queuePaint();
+  };
+  draw();
+  if (widget) {
+    redraws.push(draw);
+    html.removeAttribute("data-widget-busy");
+  }
 }
 
 // How far the system font's colon has to rise to centre on its digits, in em.
@@ -316,6 +456,16 @@ new ResizeObserver(queuePaint).observe(document.body);
 new MutationObserver(queuePaint).observe(document.body, { childList: true, subtree: true });
 document.addEventListener("toggle", queuePaint, true);
 
+if (widget) {
+  widgetClasses();
+  addEventListener("hashchange", () => {
+    const next = widgetContext(location.hash);
+    if (!next) return;
+    widget = next;
+    widgetClasses();
+    for (const draw of redraws) draw();
+  });
+}
 colonLift();
 const data = document.getElementById("event");
 if (data) eventPage(JSON.parse(data.textContent));
