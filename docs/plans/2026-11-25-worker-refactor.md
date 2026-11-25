@@ -150,7 +150,8 @@ Screenshots, before and after: see the previewer link in the report that came wi
 
 **Page**
 
-- Each zone is a rounded card: code, time, then place and UTC offset. Text is dark on day skies and light on night skies. One zone fills the width; 5 or 6 sit in threes, 7 or 8 in fours; on a phone they stack as rows.
+- The page matches the link-preview image: each zone is a full-bleed vertical stripe of its sky gradient, with no gaps, corners or boxes, and the type sits straight on it. A stripe shows the code, the time and the UTC offset (plus the date when it differs); the place name is a tooltip on the code. Text is dark on day skies and light on night skies. One zone fills the width; 5 or 6 sit in threes, 7 or 8 in fours. On a phone up to 3 zones stay side by side as stripes, and more stack as full-width bands.
+- Type is the system font (San Francisco on Apple devices) at medium weight. am/pm is one letter set close to the digits (`10:30a`). The colon is centred on the digits as on a clock: the page script measures how far the font in use needs it raised (0.112 em for San Francisco). A range stacks its two ends.
 - The header carries the label, the date line, and "in 3h 12m" / "started 5m ago, 25m left" / "ended 1h ago", computed in the browser.
 - The viewer's own zone is added by the page script as a last card marked "Your zone", unless a listed zone already has the same offset at that moment.
 - A live clock (`now`, or zones alone) is drawn by the Worker for the request's minute and then kept current by the browser with `Intl`. It makes no further requests.
@@ -159,9 +160,9 @@ Screenshots, before and after: see the previewer link in the report that came wi
 
 **Link-preview image** (1200×630 PNG)
 
-- Inter Bold for times and Medium for the rest, sent to og-svg with each render. Text is fitted with the font's advance widths (`src/fonts/inter-metrics.json`) so nothing overflows a column.
-- AM and PM are ordinary capitals at a smaller size. `test/render.test.js` checks that every character in eight sample cards and the home card is in the font, and that characters the font lacks (CJK in a label) are dropped before drawing.
-- 1 to 4 zones are columns; 5 to 8 are two rows; more than 8 shows 7 and "+N more". A labelled or dated event gets a dark band with the label and date. The day marker is spelled out ("Thu 26 Nov (+1)").
+- Inter Medium for all text, sent to og-svg with each render (Inter stands in for the system font, which can't be bundled). Inter's contextual alternates centre the colon. Text is fitted with the font's advance widths (`src/fonts/inter-metrics.json`) so nothing overflows a column, and every cell uses the same time size so the times line up.
+- am/pm is one lowercase letter at half size, as on the page. Titles, `og:title` and calendar text keep `am`/`pm` in full. `test/render.test.js` checks that every character in eight sample cards and the home card is in the font, and that characters the font lacks (CJK in a label) are dropped before drawing.
+- 1 to 4 zones are columns; 5 to 8 are two rows; more than 8 shows 7 and "+N more". A labelled or dated event gets a dark band with the label and date. The day marker is spelled out ("Thu 26 Nov (+1)"). The home image is the 24 hours of stripes with the name set on them, no panel behind it.
 
 **Not done:** an LCD or "clock face" style; the analogue clock icon the old page showed above each zone; any motion.
 
