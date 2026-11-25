@@ -104,8 +104,6 @@ dist
 .tern-port
 .DS_Store
 .firebase/**
-functions/package-lock.json
-package-lock.json
 
 # Local Netlify folder
 .netlify
@@ -117,7 +115,10 @@ package-lock.json
 # Deno lockfile — edge functions are currently disabled
 deno.lock
 
-# OurAirports source data — not committed (123 KB precomputed map is in netlify/airport-map-data.json)
+# OurAirports source data — not committed (123 KB precomputed map is in src/data/airport-map-data.json)
 # To regenerate: download from https://davidmegginson.github.io/ourairports-data/airports.csv
 #   then run: npm run build:airports
 airports.csv
+
+# Wrangler's local state and bundles
+.wrangler/

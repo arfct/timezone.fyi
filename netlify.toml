@@ -1,19 +1,8 @@
+# timezone.fyi is moving from Netlify to the Cloudflare Worker in this repo
+# (docs/plans/2026-11-25-worker-refactor.md, section 10). The Netlify
+# functions are gone, so a build from this commit on would publish a broken
+# site. An ignore command that exits 0 tells Netlify to skip the build, and
+# the last published deploy keeps serving timezone.fyi until the domain moves
+# to the Worker. Delete this file with the Netlify site.
 [build]
-  publish = "static"
-  functions = "netlify/functions"
-  edge_functions = "./netlify/edge-functions-disabled"
-
-[dev]
-  functions = "netlify/functions"
-  publish = "static"
-
-[[redirects]]
-  from = "/og"
-  to = "/.netlify/functions/og"
-  status = 200
-  force = true
-
-[[redirects]]
-  from = "/*"
-  to = "/.netlify/functions/index"
-  status = 200
+  ignore = "exit 0"

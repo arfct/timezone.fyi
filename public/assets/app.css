@@ -1,0 +1,908 @@
+/* timezone.fyi. Colours for the page itself are Quantum's (arfct/quantum,
+   tokens/tokens.json): background, text-high, text-medium, divider, primary.
+   Text is set in the platform's system UI font, as Quantum specifies. */
+:root {
+  color-scheme: light dark;
+  --background: #ffffff;
+  --surface: #ffffff;
+  --text-high: rgba(0, 0, 0, 0.87);
+  --text-medium: rgba(0, 0, 0, 0.6);
+  --divider: rgba(0, 0, 0, 0.12);
+  --field: rgba(0, 0, 0, 0.04);
+  --primary: oklch(0.546 0.245 262.881); /* blue-600 */
+  --primary-fill: oklch(0.546 0.245 262.881);
+  --scrim: rgba(0, 0, 0, 0.32);
+  --error: #b00020;
+  --ink: #0d1117;
+  --font:
+    -apple-system, BlinkMacSystemFont, system-ui, "Segoe UI", Roboto, "Helvetica Neue", Arial,
+    sans-serif;
+  --mono: ui-monospace, "SF Mono", Menlo, Consolas, monospace;
+}
+@media (prefers-color-scheme: dark) {
+  :root {
+    --background: #121212;
+    --surface: #1e1e1e; /* surface-dp01 */
+    --text-high: rgba(255, 255, 255, 0.87);
+    --text-medium: rgba(255, 255, 255, 0.6);
+    --divider: rgba(255, 255, 255, 0.12);
+    --field: rgba(255, 255, 255, 0.09);
+    --primary: oklch(0.809 0.105 251.813); /* blue-300 */
+    --error: #cf6679;
+  }
+}
+
+* {
+  box-sizing: border-box;
+}
+html {
+  -webkit-text-size-adjust: 100%;
+  overflow-x: clip;
+}
+body {
+  margin: 0;
+  min-height: 100dvh;
+  display: flex;
+  flex-direction: column;
+  font: 16px / 1.45 var(--font);
+  background: var(--background);
+  color: var(--text-high);
+  -webkit-font-smoothing: antialiased;
+}
+a {
+  color: var(--primary);
+}
+h1,
+h2,
+p {
+  margin: 0;
+}
+code {
+  font-family: var(--mono);
+  font-size: 0.92em;
+}
+
+/* Buttons and chips are text colour. The only coloured ones are the
+   buttons above the stripes (.top), which take the gradient of the stripe
+   nearest them: the Worker sets the last zone's colours on the page, and
+   app.js matches each one to its nearest stripe. Without either, Quantum's
+   blue. */
+.btn,
+.chip {
+  border: 1px solid var(--divider);
+  background: transparent;
+  color: var(--text-high);
+  cursor: pointer;
+  text-decoration: none;
+  white-space: nowrap;
+}
+.btn {
+  font: 500 14px / 34px var(--font);
+  letter-spacing: 0.01em;
+  height: 36px;
+  padding: 0 16px;
+  border-radius: 18px;
+  display: inline-block;
+}
+.btn:hover,
+.chip:hover {
+  background: var(--field);
+}
+.top .btn {
+  --fill: linear-gradient(
+    135deg,
+    var(--top, var(--primary-fill)),
+    var(--bottom, var(--primary-fill))
+  );
+  border: 0;
+  line-height: 36px;
+  background: var(--fill);
+  color: var(--on, #ffffff);
+}
+/* The secondary button above the stripes is a ring of the same colour */
+.top .btn:not(.primary) {
+  background:
+    linear-gradient(var(--background), var(--background)) padding-box,
+    var(--fill) border-box;
+  border: 2px solid transparent;
+  line-height: 32px;
+  color: var(--text-high);
+}
+.top .btn:hover {
+  filter: brightness(1.06) saturate(1.1);
+}
+.btn:focus-visible,
+.chip:focus-visible,
+.row:focus-visible,
+input:focus-visible,
+select:focus-visible,
+a:focus-visible {
+  outline: 2px solid var(--primary);
+  outline-offset: 2px;
+}
+.chips {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+.chip {
+  font: 500 14px / 30px var(--font);
+  height: 32px;
+  padding: 0 12px;
+  border-radius: 16px;
+}
+
+/* Event and live pages */
+.top {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: flex-end;
+  justify-content: space-between;
+  gap: 12px 24px;
+  padding: 28px 28px 20px;
+}
+.top h1 {
+  font-size: clamp(28px, 4.2vw, 46px);
+  line-height: 1.1;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  overflow-wrap: anywhere;
+}
+.when {
+  margin-top: 8px;
+  color: var(--text-medium);
+  font-size: 17px;
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 12px;
+  align-items: baseline;
+}
+#date:empty {
+  display: none;
+}
+#relative:not(:empty) {
+  color: var(--text-high);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+.pin {
+  font-size: 14px;
+}
+.actions {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: flex-end;
+  gap: 8px;
+}
+
+/* The stripes run to the bottom of the window. The only other thing on them is
+   the name in the last stripe's corner, as in the link preview. */
+.stage {
+  flex: 1;
+  position: relative;
+  display: grid;
+}
+.mark {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  opacity: 0.5;
+  text-decoration: none;
+}
+.stage:has(.zone.dark:last-of-type) .mark {
+  color: #ffffff;
+}
+.mark:hover {
+  opacity: 0.85;
+}
+
+/* The zones are the link-preview image at page size: full-bleed vertical
+   stripes of the sky gradient, no gaps, no corners, type set straight on them. */
+.zones {
+  display: grid;
+  /* --cols comes from the number of zones (columnsFor in shared.js) */
+  grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
+  grid-auto-rows: 1fr;
+}
+@media (min-width: 641px) and (max-width: 900px) {
+  .zones.many {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+}
+.zone {
+  container-type: inline-size;
+  min-height: 190px;
+  padding: 24px 16px;
+  background: linear-gradient(135deg, var(--top), var(--bottom));
+  color: var(--ink);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  gap: 0.6em;
+  text-align: center;
+  /* A drag or double tap over a tile selects no text */
+  -webkit-user-select: none;
+  user-select: none;
+}
+.zone.dark {
+  color: #ffffff;
+}
+.zone .name {
+  font-size: clamp(15px, 6cqi, 26px);
+  font-weight: 500;
+  letter-spacing: 0.06em;
+  opacity: 0.7;
+}
+.zone .time {
+  font-size: clamp(44px, 26cqi, 168px);
+  line-height: 1;
+  font-weight: 500;
+  letter-spacing: -0.035em;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+/* A range stacks its two ends, as the link preview does */
+.zone.range .time {
+  font-size: clamp(30px, 20cqi, 128px);
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 0.08em;
+}
+.zone.range .from {
+  font-size: 0.72em;
+  opacity: 0.85;
+}
+/* A clock's colon: centred on the digits, not sitting on the baseline.
+   --colon-lift is measured from the font in use by app.js; 0.112 em is
+   San Francisco's at weight 500. */
+.zone .colon {
+  display: inline-block;
+  transform: translateY(calc(-1em * var(--colon-lift, 0.112)));
+  margin: 0 0.01em;
+}
+/* am/pm as one letter, set close: "10:30a" */
+.zone .ap {
+  font-size: 0.5em;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-left: 0.04em;
+  opacity: 0.72;
+}
+.zone .dash {
+  margin: 0 0.16em;
+  font-weight: 300;
+  opacity: 0.6;
+}
+.zone .day {
+  font-size: 0.3em;
+  font-weight: 500;
+  letter-spacing: 0;
+  margin-left: 0.12em;
+  vertical-align: 1.2em;
+  line-height: 0;
+  opacity: 0.8;
+}
+.zone .note {
+  font-size: clamp(13px, 4.4cqi, 17px);
+  letter-spacing: 0.01em;
+  opacity: 0.62;
+  font-variant-numeric: tabular-nums;
+}
+.zone .note b {
+  font-weight: 500;
+}
+
+.foot {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 4px 20px;
+  padding: 14px 28px 18px;
+  font-size: 14px;
+  color: var(--text-medium);
+}
+.foot span {
+  flex: 1;
+}
+.foot a {
+  color: inherit;
+}
+
+@media (max-width: 640px) {
+  .top {
+    padding: 20px 20px 16px;
+  }
+  /* Up to three zones stay side by side as stripes; more stack as bands */
+  .zones {
+    grid-template-columns: repeat(min(var(--cols, 3), 3), minmax(0, 1fr));
+  }
+  .zones.many {
+    grid-template-columns: 1fr;
+  }
+  .zone {
+    padding: 20px 8px;
+  }
+  .zone .time {
+    font-size: clamp(30px, 30cqi, 64px);
+  }
+  .zones.many .zone {
+    min-height: 104px;
+    padding: 14px 22px;
+    display: grid;
+    grid-template-columns: 1fr auto;
+    grid-template-areas: "name time" "note time";
+    align-items: center;
+    gap: 2px 12px;
+    text-align: left;
+  }
+  /* Room under the last band's time for the name in its corner */
+  .zones.many .zone:last-of-type {
+    padding-bottom: 34px;
+    min-height: 124px;
+  }
+  .zones.many .zone .name {
+    grid-area: name;
+    align-self: end;
+    font-size: 17px;
+  }
+  .zones.many .zone .note {
+    grid-area: note;
+    align-self: start;
+    font-size: 13px;
+  }
+  .zones.many .zone .time {
+    grid-area: time;
+    font-size: clamp(40px, 14cqi, 56px);
+  }
+  .zone.range .time {
+    font-size: clamp(26px, 22cqi, 52px);
+  }
+  .zones.many .zone.range .time {
+    display: block;
+    font-size: clamp(20px, 7.6cqi, 34px);
+  }
+  .zones.many .zone.range .from {
+    font-size: 1em;
+    opacity: 1;
+  }
+  .foot {
+    padding: 10px 20px 16px;
+    justify-content: space-between;
+  }
+  .foot span {
+    display: none;
+  }
+  .home .foot span {
+    display: inline;
+  }
+}
+
+/* The calendar sheet */
+.sheet {
+  width: min(440px, calc(100vw - 24px));
+  max-height: calc(100dvh - 24px);
+  overflow: auto;
+  margin: auto;
+  padding: 24px;
+  border: 0;
+  border-radius: 16px;
+  background: var(--surface);
+  color: var(--text-high);
+  box-shadow:
+    0 11px 15px -7px rgba(0, 0, 0, 0.2),
+    0 24px 38px 3px rgba(0, 0, 0, 0.14);
+}
+.sheet::backdrop {
+  background: var(--scrim);
+}
+.sheet h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin-bottom: 12px;
+}
+.sheet .row {
+  display: block;
+  padding: 12px 0;
+  border-top: 1px solid var(--divider);
+  text-decoration: none;
+  color: var(--text-high);
+}
+.sheet .row b {
+  display: block;
+  font-weight: 500;
+  color: var(--primary);
+}
+.sheet .row span {
+  font-size: 14px;
+  color: var(--text-medium);
+}
+.sheet .hint {
+  font-size: 14px;
+  color: var(--text-medium);
+  margin: 10px 0;
+}
+/* The length in use is the filled chip */
+.sheet .chip[aria-current] {
+  background: var(--text-high);
+  border-color: var(--text-high);
+  color: var(--surface);
+}
+.sheet .btn {
+  margin-top: 16px;
+}
+/* "Make a link" is the same kind of dialog, wider for its fields */
+.sheet.builder {
+  width: min(680px, calc(100vw - 24px));
+}
+.sheet.builder h2 {
+  font-size: 20px;
+  font-weight: 500;
+  margin: 0 0 16px;
+}
+
+/* Home page */
+.home {
+  width: min(820px, 100%);
+  margin: 0 auto;
+  padding: 0 20px 24px;
+}
+/* The home page's bar above the stripes holds only "Make a link" */
+.home-top {
+  justify-content: flex-end;
+  padding: 14px 20px;
+}
+/* The home page's stripes are the home link preview: 24 hours of sky, with
+   the name set straight on them */
+.hero h1 {
+  position: absolute;
+  inset: 0;
+  display: grid;
+  place-items: center;
+  font-size: clamp(40px, 9vw, 72px);
+  line-height: 1.05;
+  font-weight: 600;
+  letter-spacing: -0.03em;
+  color: #ffffff;
+  text-shadow: 0 2px 20px rgba(0, 0, 0, 0.35);
+}
+.lede {
+  margin-top: 20px;
+  font-size: 19px;
+  color: var(--text-medium);
+  max-width: 34em;
+}
+.strip {
+  position: relative;
+  margin: 0 calc(50% - 50vw);
+  display: grid;
+  grid-template-columns: repeat(24, 1fr);
+  grid-template-rows: clamp(150px, 26vw, 220px);
+}
+.strip i {
+  background: linear-gradient(135deg, var(--top), var(--bottom));
+}
+.error {
+  margin-top: 24px;
+  padding: 12px 16px;
+  border-left: 4px solid var(--error);
+  background: var(--field);
+  border-radius: 4px;
+}
+.home h2 {
+  font-size: 22px;
+  font-weight: 600;
+  margin: 40px 0 16px;
+}
+.fields {
+  display: grid;
+  grid-template-columns: repeat(6, 1fr);
+  gap: 12px;
+}
+.fields label {
+  display: grid;
+  align-content: start;
+  gap: 4px;
+  font-size: 13px;
+  color: var(--text-medium);
+  min-width: 0;
+}
+.f-time {
+  grid-column: span 2;
+}
+.f-zones {
+  grid-column: span 4;
+  min-width: 0;
+}
+.fields .help,
+.copy-note {
+  font-size: 13px;
+  color: var(--text-medium);
+}
+.fields .help {
+  margin-top: 4px;
+}
+/* Shown only when a copy fails: what to do in its place */
+.copy-note:empty {
+  display: none;
+}
+.copy-note {
+  flex-basis: 100%;
+}
+.actions .copy-note {
+  text-align: right;
+}
+.f-date,
+.f-length,
+.f-repeat {
+  grid-column: span 2;
+}
+.f-label {
+  grid-column: span 6;
+}
+.fields input,
+.fields select {
+  font: 17px / 1.2 var(--font);
+  height: 48px;
+  width: 100%;
+  min-width: 0;
+  padding: 0 12px;
+  border: 0;
+  border-bottom: 1px solid var(--text-medium);
+  border-radius: 4px 4px 0 0;
+  background: var(--field);
+  color: var(--text-high);
+}
+.builder .chips {
+  margin-top: 12px;
+}
+.result {
+  margin-top: 20px;
+  display: flex;
+  flex-wrap: wrap;
+  align-items: center;
+  gap: 10px;
+  padding: 14px 16px;
+  border: 1px solid var(--divider);
+  border-radius: 12px;
+}
+.result .link {
+  flex: 1 1 260px;
+  min-width: 0;
+  font: 16px / 1.4 var(--mono);
+  overflow-wrap: anywhere;
+  text-decoration: none;
+}
+.examples {
+  list-style: none;
+  margin: 0;
+  padding: 0;
+  display: grid;
+  gap: 8px;
+}
+.examples li {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 2px 16px;
+  align-items: baseline;
+}
+.examples span {
+  color: var(--text-medium);
+  font-size: 15px;
+}
+.guide dl {
+  margin: 24px 0 0;
+  display: grid;
+  grid-template-columns: 5.5em 1fr;
+  gap: 12px 16px;
+}
+.guide dt {
+  font-weight: 600;
+}
+.guide dd {
+  margin: 0;
+  color: var(--text-medium);
+}
+.guide dd code {
+  color: var(--text-high);
+}
+.home .foot {
+  padding: 40px 0 0;
+  justify-content: space-between;
+}
+@media (max-width: 640px) {
+  .f-time,
+  .f-zones,
+  .f-label {
+    grid-column: span 6;
+  }
+  .f-date,
+  .f-length,
+  .f-repeat {
+    grid-column: span 3;
+  }
+  .f-repeat {
+    grid-column: span 6;
+  }
+  .guide dl {
+    grid-template-columns: 1fr;
+    gap: 2px;
+  }
+  .guide dd {
+    margin-bottom: 12px;
+  }
+}
+
+/* Display P3 where the browser has it: the same sky with more saturation,
+   which P3 screens show and others map back into their own gamut. Last in the
+   file so it wins over the sRGB backgrounds above. */
+@supports (color: color(display-p3 0 0 0)) {
+  .zone,
+  .strip i {
+    background: linear-gradient(135deg, var(--top-p3), var(--bottom-p3));
+  }
+  .top .btn {
+    --fill: linear-gradient(
+      135deg,
+      var(--top-p3, var(--primary-fill)),
+      var(--bottom-p3, var(--primary-fill))
+    );
+  }
+}
+
+/* Widgets. app.js puts .widget and the family (.w-systemSmall, .w-systemMedium,
+   .w-systemLarge, .w-accessoryRectangular) on <html> only when the page is
+   opened with #widget?… in its address, as Quicksilver does for a Home Screen
+   widget. The page is then exactly the widget's size and is drawn as a still
+   picture: the stripes fill it, nothing can be pressed, nothing scrolls. The
+   background is transparent so the widget's own shows where nothing is drawn.
+   Quicksilver's ••• sits in the top 16 pt at the centre, over the picture. */
+html.widget,
+html.widget body {
+  height: 100%;
+  overflow: hidden;
+  background: transparent;
+}
+html.widget body {
+  min-height: 0;
+}
+html.widget .top,
+html.widget .mark,
+html.widget .sheet,
+html.widget .copy-note,
+html.widget .zone.w-off {
+  display: none;
+}
+html.widget .stage {
+  min-height: 0;
+}
+html.widget .zones {
+  grid-template-columns: repeat(var(--cols, 1), minmax(0, 1fr));
+  grid-auto-rows: minmax(0, 1fr);
+}
+html.widget .zone {
+  min-height: 0;
+  padding: 6px 4px;
+  gap: 0.35em;
+  overflow: hidden;
+}
+html.widget .zone .name {
+  font-size: clamp(11px, 12cqi, 17px);
+  letter-spacing: 0.04em;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+html.widget .zone .time {
+  font-size: clamp(16px, 27cqi, 60px);
+}
+html.widget .zone.range .time {
+  font-size: clamp(14px, 21cqi, 44px);
+}
+html.widget .zone .note {
+  font-size: clamp(10px, 10cqi, 13px);
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+/* The line under the stripes: the name or the day, and how far off */
+.wcap {
+  display: none;
+}
+html.widget .wcap {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  padding: 6px 12px 7px;
+  font-size: 13px;
+  line-height: 1.25;
+  color: var(--text-high);
+  order: 2;
+  white-space: nowrap;
+}
+html.widget .wtitle {
+  flex: 1 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  font-weight: 600;
+}
+html.widget .wsub {
+  display: none;
+}
+html.widget .wrel {
+  flex: none;
+  color: var(--text-medium);
+  font-weight: 500;
+  font-variant-numeric: tabular-nums;
+}
+html.widget .wrel:empty {
+  display: none;
+}
+/* A live clock's small and medium widgets are stripes alone */
+html.w-live:not(.w-systemLarge) .wcap {
+  display: none;
+}
+
+/* Small: one stripe's notes are room the time needs */
+html.w-systemSmall .zones[data-cols="2"] .note {
+  display: none;
+}
+html.w-systemSmall .wcap {
+  padding: 5px 10px 6px;
+  font-size: 12px;
+}
+
+/* Large: the name and day on top, under the widget's top margin */
+html.w-systemLarge .wcap {
+  order: 0;
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) auto;
+  grid-template-areas: "title title" "sub rel";
+  gap: 2px 10px;
+  padding: 24px 16px 10px;
+}
+html.w-systemLarge .wtitle {
+  grid-area: title;
+  font-size: 20px;
+  font-weight: 700;
+  letter-spacing: -0.01em;
+}
+html.w-systemLarge .wsub {
+  grid-area: sub;
+  display: block;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  color: var(--text-medium);
+}
+html.w-systemLarge .wrel {
+  grid-area: rel;
+}
+html.w-systemLarge .zone .time {
+  font-size: clamp(18px, 26cqi, 64px);
+}
+
+/* Lock Screen: a line per zone, white on the wallpaper; the system tints it */
+/* Inset from the rectangle's rounded corners */
+html.w-accessoryRectangular .stage {
+  padding: 2px 10px;
+}
+html.w-accessoryRectangular .zones {
+  grid-template-columns: 1fr;
+  align-content: center;
+  grid-auto-rows: auto;
+}
+html.w-accessoryRectangular .zone,
+html.w-accessoryRectangular .zone.dark {
+  background: none;
+  color: #ffffff;
+  padding: 0;
+  flex-direction: row;
+  justify-content: space-between;
+  align-items: baseline;
+  gap: 8px;
+  text-align: left;
+}
+html.w-accessoryRectangular .zone .name {
+  font-size: 14px;
+  font-weight: 600;
+  opacity: 0.8;
+}
+html.w-accessoryRectangular .zone .time,
+html.w-accessoryRectangular .zone.range .time {
+  font-size: 17px;
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  display: block;
+}
+html.w-accessoryRectangular .zone.range .from {
+  font-size: 1em;
+  opacity: 1;
+}
+html.w-accessoryRectangular .zone .note {
+  display: none;
+}
+html.w-accessoryRectangular .wcap {
+  order: 0;
+  padding: 2px 10px 0;
+  font-size: 13px;
+  color: #ffffff;
+}
+html.w-accessoryRectangular .wrel {
+  color: rgba(255, 255, 255, 0.8);
+}
+/* Three zones fill the rectangle; the line goes */
+html.w-accessoryRectangular:has(.zone:nth-of-type(3)) .wcap,
+html.w-accessoryRectangular.w-live .wcap {
+  display: none;
+}
+
+/* The home page as a widget: today's 24 hours of sky where the phone is,
+   with the hour it is marked and the day under the name */
+html.widget .home-top,
+html.widget .lede,
+html.widget .guide,
+html.widget .foot,
+html.widget .error {
+  display: none;
+}
+html.widget .home {
+  width: 100%;
+  height: 100%;
+  padding: 0;
+}
+html.widget .hero,
+html.widget .strip {
+  height: 100%;
+}
+html.widget .strip {
+  margin: 0;
+  grid-template-rows: 100%;
+}
+html.widget .strip i.w-now {
+  box-shadow: inset 0 0 0 1.5px rgba(255, 255, 255, 0.95);
+}
+html.widget .hero h1 {
+  font-size: clamp(22px, 9vw, 40px);
+  align-content: center;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.35);
+}
+html.widget .strip::after {
+  content: attr(data-day);
+  position: absolute;
+  left: 0;
+  right: 0;
+  top: calc(50% + 0.9em + clamp(11px, 4.5vw, 20px) * 0.5);
+  text-align: center;
+  font-size: clamp(12px, 4vw, 17px);
+  font-weight: 600;
+  color: #ffffff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+html.w-accessoryRectangular .strip i,
+html.w-accessoryRectangular .strip i.w-now {
+  background: none;
+  box-shadow: none;
+}
+html.w-accessoryRectangular .hero h1 {
+  font-size: 17px;
+  text-shadow: none;
+  place-items: start;
+  align-content: start;
+  padding: 8px 10px;
+}
+html.w-accessoryRectangular .strip::after {
+  top: 34px;
+  text-align: left;
+  padding: 0 10px;
+  font-size: 13px;
+  text-shadow: none;
+}
