@@ -1,0 +1,27 @@
+{
+  "$schema": "node_modules/wrangler/config-schema.json",
+  // Prototype of the Worker refactor (docs/plans/2026-11-25-worker-refactor.md).
+  // It runs only on workers.dev: no routes, no custom domains. timezone.fyi
+  // itself is still served by Netlify from main.
+  "name": "timezone-fyi-proto",
+  "main": "src/worker.js",
+  "compatibility_date": "2026-11-03",
+  "account_id": "c0912e10eadeaa117b0067ab29b55da6",
+  "workers_dev": true,
+  "preview_urls": false,
+  "observability": { "enabled": true },
+  "assets": {
+    "directory": "./public",
+    "binding": "ASSETS",
+    // Files under /assets/ and robots.txt are served without running the
+    // Worker, which costs nothing. Every other path is a link to read.
+    "run_worker_first": ["/*", "!/assets/*", "!/robots.txt"],
+    "html_handling": "none",
+    "not_found_handling": "none"
+  },
+  // The fonts for the link-preview image, as bytes
+  "rules": [{ "type": "Data", "globs": ["**/*.ttf"], "fallthrough": true }],
+  // arfct/og-svg turns the image's SVG into a PNG. A service binding, not a
+  // fetch: one Worker can't fetch another on workers.dev (error 1042).
+  "services": [{ "binding": "RENDER", "service": "og-svg" }]
+}

@@ -1,5 +1,5 @@
 /**
- * Build script: generates netlify/airport-map-data.json
+ * Build script: generates src/data/airport-map-data.json
  *
  * Sources (lxndrblz/Airports — fetched from GitHub at build time):
  *   airports.csv  — all IATA airports with IANA timezone + city_code
@@ -175,7 +175,7 @@ const sorted = Object.fromEntries(
   Object.entries(airportMap).sort(([a], [b]) => a.localeCompare(b))
 );
 
-const outPath = new URL("../netlify/airport-map-data.json", import.meta.url);
+const outPath = new URL("../src/data/airport-map-data.json", import.meta.url);
 writeFileSync(outPath, JSON.stringify(sorted, null, 2) + "\n");
 
 // 4. Major places: large airports (by OurAirports size) and metro codes
@@ -185,7 +185,7 @@ const largeAirports = parseCSV(ourAirportsText)
 const majorPlaces = [...new Set([...largeAirports, ...metroCodes])]
   .filter(code => sorted[code])
   .sort();
-const majorPath = new URL("../netlify/major-places.json", import.meta.url);
+const majorPath = new URL("../src/data/major-places.json", import.meta.url);
 writeFileSync(majorPath, JSON.stringify(majorPlaces) + "\n");
 
 console.log(`Airport codes:                ${airportCount}`);
@@ -193,4 +193,4 @@ console.log(`Metro codes (citycodes.csv):  ${cityCodeCount}`);
 console.log(`Metro codes (derived):        ${derivedCount}`);
 console.log(`Total entries:                ${Object.keys(sorted).length}`);
 console.log(`Major places:                 ${majorPlaces.length}`);
-console.log(`Written to netlify/airport-map-data.json and netlify/major-places.json`);
+console.log(`Written to src/data/airport-map-data.json and src/data/major-places.json`);
