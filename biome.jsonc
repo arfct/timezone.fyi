@@ -34,6 +34,13 @@
       "preset": "recommended"
     }
   },
+  "overrides": [
+    {
+      // SKY_P3 is a table of colour components; 0.707 there is a colour, not √½
+      "includes": ["public/assets/shared.js"],
+      "linter": { "rules": { "suspicious": { "noApproximativeNumericConstant": "off" } } }
+    }
+  ],
   "javascript": {
     "formatter": {
       "quoteStyle": "double"

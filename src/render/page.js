@@ -1,5 +1,13 @@
 // The HTML for an event page, a live clock and the home page.
-import { columnsFor, dateText, escapeHtml, SKY, zoneCard } from "../../public/assets/shared.js";
+import {
+  columnsFor,
+  dateText,
+  escapeHtml,
+  SKY,
+  skyAt,
+  skyStyle,
+  zoneCard,
+} from "../../public/assets/shared.js";
 import { calendarLinks, DEFAULT_DURATION } from "../lib/ics.js";
 
 const SITE = "timezone.fyi";
@@ -167,10 +175,12 @@ ${event.live ? "" : `<button class="btn primary" popovertarget="calendar">Add to
 <button class="btn" id="copy" data-url="${e(url)}">Copy link</button>
 </nav>
 </header>
+<div class="stage">
 <main id="zones" class="zones${event.zones.length > 2 ? " many" : ""}" style="--cols:${columnsFor(event.zones.length)}">
 ${cards}
 </main>
-<footer class="foot"><a href="/">${SITE}</a><span>Times follow each place's own clock changes.</span><a href="/">Make a link</a></footer>
+<a class="mark" href="/">${SITE}</a>
+</div>
 ${event.live ? "" : calendarPanel(event, origin)}
 <script type="application/json" id="event">${jsonScript(data)}</script>`;
 
@@ -202,9 +212,7 @@ const EXAMPLES = [
 // parse.
 export function homePage(origin, error) {
   const e = escapeHtml;
-  const strip = SKY.map(([top, bottom]) => `<i style="--top:${top};--bottom:${bottom}"></i>`).join(
-    "",
-  );
+  const strip = SKY.map((_, hour) => `<i style="${skyStyle(skyAt(hour * 60))}"></i>`).join("");
   const examples = EXAMPLES.map(
     ([path, what]) =>
       `<li><a href="${e(path)}"><code>${e(path)}</code></a><span>${e(what)}</span></li>`,

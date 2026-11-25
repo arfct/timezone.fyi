@@ -194,3 +194,44 @@ const drawn = eventCard(read("/2026-12-03/10:30pm,nyc"));
 expect("the image writes pm as p", /font-weight="500"[^>]*>p<\/tspan>/.test(drawn), true);
 expect("the image has no AM or PM", /\b[AP]M\b/.test(drawn), false);
 expect("the home image has no panel behind the name", /<rect[^>]* rx=/.test(homeCard()), false);
+
+console.log("\nDisplay P3");
+const { SKY, SKY_P3 } = await import("../public/assets/shared.js");
+expect("a P3 pair for every hour", SKY_P3.length, SKY.length);
+expect(
+  "every P3 component is between 0 and 1",
+  SKY_P3.flat(2).every((v) => v >= 0 && v <= 1),
+  true,
+);
+expect(
+  "skyAt on the hour is the table's colour",
+  skyAt(10 * 60).topP3,
+  "color(display-p3 1 0.883 0.254)",
+);
+expect("…with the sRGB colour kept for fallback", skyAt(10 * 60).top, SKY[10][0]);
+const striped = page("/2026-12-03/10am,nyc");
+expect(
+  "a stripe carries both palettes",
+  /--top:#[0-9a-f]{6};--bottom:#[0-9a-f]{6};--top-p3:color\(display-p3 /.test(striped),
+  true,
+);
+expect(
+  "the image draws the sky with P3 values",
+  eventCard(read("/2026-12-03/10am,nyc")).includes(skyAt(10 * 60).topP3Hex),
+  true,
+);
+expect(
+  "the stylesheet uses P3 where supported",
+  /@supports \(color: color\(display-p3/.test(
+    readFileSync(new URL("../public/assets/app.css", import.meta.url), "utf8"),
+  ),
+  true,
+);
+
+console.log("\nThe event page's footer");
+expect("no footer on an event page", /<footer/.test(striped), false);
+expect(
+  "the name sits on the stripes and links home",
+  /<a class="mark" href="\/">timezone.fyi<\/a>/.test(striped),
+  true,
+);

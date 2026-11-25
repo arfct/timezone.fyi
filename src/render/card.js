@@ -1,6 +1,7 @@
 // The link-preview image for an event, as an SVG string, 1200×630. One cell
 // per zone, filled with the sky gradient for the local time there.
-// Rasterised by the og-svg Worker; see worker.js.
+// Rasterised by the og-svg Worker; see worker.js. The sky colours are written
+// as Display P3 values, and worker.js tags the PNG as Display P3.
 import { clock, dateText, SKY, skyAt } from "../../public/assets/shared.js";
 import metrics from "../fonts/inter-metrics.json" with { type: "json" };
 
@@ -118,8 +119,8 @@ function cell(z, event, i, x, y, w, h, shared) {
   const noteBaseline = timeBaseline(rows.length - 1) + gap * 0.92 + noteSize * CAP;
   const cx = (x + w / 2).toFixed(1);
   return [
-    `<linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.top}"/>` +
-      `<stop offset="1" stop-color="${sky.bottom}"/></linearGradient>`,
+    `<linearGradient id="g${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.topP3Hex}"/>` +
+      `<stop offset="1" stop-color="${sky.bottomP3Hex}"/></linearGradient>`,
     `<rect x="${x.toFixed(1)}" y="${y.toFixed(1)}" width="${(w + 0.5).toFixed(1)}" height="${(h + 0.5).toFixed(1)}" fill="url(#g${i})"/>`,
     `<g fill="${ink}" text-anchor="middle" font-family="Inter">`,
     `<text x="${cx}" y="${nameBaseline.toFixed(1)}" font-size="${nameSize.toFixed(1)}" font-weight="500" fill-opacity="0.74" letter-spacing="${(nameSize * 0.04).toFixed(1)}">${xml(lines.name)}</text>`,
@@ -242,11 +243,13 @@ export function eventCard(event) {
 // the sky gradient, and the name.
 export function homeCard() {
   const w = WIDTH / 24;
-  const stripes = SKY.map(
-    ([top, bottom], i) =>
-      `<linearGradient id="h${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${top}"/><stop offset="1" stop-color="${bottom}"/></linearGradient>` +
-      `<rect x="${i * w}" width="${w + 0.5}" height="${HEIGHT}" fill="url(#h${i})"/>`,
-  ).join("");
+  const stripes = SKY.map((_, i) => skyAt(i * 60))
+    .map(
+      (sky, i) =>
+        `<linearGradient id="h${i}" x1="0" y1="0" x2="0" y2="1"><stop offset="0" stop-color="${sky.topP3Hex}"/><stop offset="1" stop-color="${sky.bottomP3Hex}"/></linearGradient>` +
+        `<rect x="${i * w}" width="${w + 0.5}" height="${HEIGHT}" fill="url(#h${i})"/>`,
+    )
+    .join("");
   return (
     `<svg xmlns="http://www.w3.org/2000/svg" width="${WIDTH}" height="${HEIGHT}" viewBox="0 0 ${WIDTH} ${HEIGHT}">${stripes}` +
     // No panel behind the name: it sits on the stripes, with a soft shadow

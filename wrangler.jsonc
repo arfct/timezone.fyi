@@ -19,8 +19,9 @@
     "html_handling": "none",
     "not_found_handling": "none"
   },
-  // The fonts for the link-preview image, as bytes
-  "rules": [{ "type": "Data", "globs": ["**/*.ttf"], "fallthrough": true }],
+  // The fonts and the Display P3 colour profile for the link-preview image,
+  // as bytes
+  "rules": [{ "type": "Data", "globs": ["**/*.ttf", "**/*.icc"], "fallthrough": true }],
   // arfct/og-svg turns the image's SVG into a PNG. A service binding, not a
   // fetch: one Worker can't fetch another on workers.dev (error 1042).
   "services": [{ "binding": "RENDER", "service": "og-svg" }]

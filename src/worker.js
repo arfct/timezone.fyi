@@ -2,17 +2,23 @@
 // with the page, its link-preview image (…/card.png) or its calendar file
 // (…/event.ics). Stylesheet, script and icon are static files under /assets/
 // and never reach this code.
+
+import displayP3 from "./color/DisplayP3-v4.icc";
 import interBold from "./fonts/Inter-Bold.subset.ttf";
 import interMedium from "./fonts/Inter-Medium.subset.ttf";
 import { resolveEvent } from "./lib/event.js";
 import { buildIcs, summary } from "./lib/ics.js";
 import { parsePath } from "./lib/parse-path.js";
+import { iccpChunk, withChunk } from "./lib/png-p3.js";
 import { canonicalZone, offsetAt } from "./lib/tz.js";
 import { eventCard, homeCard, WIDTH } from "./render/card.js";
 import { eventPage, homePage } from "./render/page.js";
 
 // Part of every cached image's key. Raise it when the image's design changes.
-const CARD_VERSION = "3";
+const CARD_VERSION = "4";
+
+// The Display P3 chunk every image carries, built once per isolate
+let p3Chunk;
 const WEEK = 604800;
 
 const SECURITY = {
@@ -63,7 +69,8 @@ async function renderPng(svg, env) {
     defaultFontFamily: "Inter",
   });
   if (!rendered.ok) throw new Error(`og-svg answered ${rendered.status}: ${await rendered.text()}`);
-  const png = await rendered.arrayBuffer();
+  p3Chunk ??= await iccpChunk(displayP3);
+  const png = withChunk(await rendered.arrayBuffer(), p3Chunk);
   return { png, ms: Date.now() - started };
 }
 

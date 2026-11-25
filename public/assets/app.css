@@ -155,10 +155,34 @@ a:focus-visible {
   gap: 8px;
 }
 
+/* The stripes run to the bottom of the window. The only other thing on them is
+   the name in the last stripe's corner, as in the link preview. */
+.stage {
+  flex: 1;
+  position: relative;
+  display: grid;
+}
+.mark {
+  position: absolute;
+  right: 18px;
+  bottom: 14px;
+  font-size: 13px;
+  font-weight: 500;
+  letter-spacing: 0.01em;
+  color: var(--ink);
+  opacity: 0.5;
+  text-decoration: none;
+}
+.stage:has(.zone.dark:last-of-type) .mark {
+  color: #ffffff;
+}
+.mark:hover {
+  opacity: 0.85;
+}
+
 /* The zones are the link-preview image at page size: full-bleed vertical
    stripes of the sky gradient, no gaps, no corners, type set straight on them. */
 .zones {
-  flex: 1;
   display: grid;
   /* --cols comes from the number of zones (columnsFor in shared.js) */
   grid-template-columns: repeat(var(--cols, 3), minmax(0, 1fr));
@@ -292,6 +316,11 @@ a:focus-visible {
     align-items: center;
     gap: 2px 12px;
     text-align: left;
+  }
+  /* Room under the last band's time for the name in its corner */
+  .zones.many .zone:last-of-type {
+    padding-bottom: 34px;
+    min-height: 124px;
   }
   .zones.many .zone .name {
     grid-area: name;
@@ -548,5 +577,15 @@ a:focus-visible {
   }
   .guide dd {
     margin-bottom: 12px;
+  }
+}
+
+/* Display P3 where the browser has it: the same sky with more saturation,
+   which P3 screens show and others map back into their own gamut. Last in the
+   file so it wins over the sRGB backgrounds above. */
+@supports (color: color(display-p3 0 0 0)) {
+  .zone,
+  .strip i {
+    background: linear-gradient(to bottom, var(--top-p3), var(--bottom-p3));
   }
 }
