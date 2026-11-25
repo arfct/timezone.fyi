@@ -15,7 +15,7 @@ import { eventCard, homeCard, WIDTH } from "./render/card.js";
 import { eventPage, homePage } from "./render/page.js";
 
 // Part of every cached image's key. Raise it when the image's design changes.
-const CARD_VERSION = "7";
+const CARD_VERSION = "8";
 
 // The Display P3 chunk every image carries, built once per isolate
 let p3Chunk;

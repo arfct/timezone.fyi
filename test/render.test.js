@@ -167,8 +167,8 @@ expect("12pm is noon", clockText(720, false), "12pm");
 expect("24-hour pads and keeps minutes", clockText(540, true), "09:00");
 expect("midnight sky wants light text", skyAt(0).dark, true);
 expect("10am sky wants dark text", skyAt(600).dark, false);
-expect("on the hour the sky is the hour's colours", skyAt(600).top, "#fee154");
-expect("half past is halfway to the next hour's", skyAt(630).top, "#fed253");
+expect("on the hour the sky is the hour's colours", skyAt(600).top, "#f2f0a6");
+expect("half past is halfway to the next hour's", skyAt(630).top, "#f7ec88");
 const H = 3600000;
 expect("in 3 h 12 min", relativeText(NOW + 3 * H + 12 * 60000, undefined, NOW), "in 3 h 12 min");
 expect("in 8 days", relativeText(NOW + 8 * 24 * H, undefined, NOW), "in 8 days");
@@ -248,7 +248,7 @@ expect(
 expect(
   "skyAt on the hour is the table's colour",
   skyAt(10 * 60).topP3,
-  "color(display-p3 1 0.883 0.254)",
+  "color(display-p3 0.956 0.945 0.605)",
 );
 expect("…with the sRGB colour kept for fallback", skyAt(10 * 60).top, SKY[10][0]);
 const striped = page("/2026-12-03/10am,nyc");
@@ -343,3 +343,27 @@ expect(
   /querySelectorAll\("\.top \.btn"\)/.test(appJs),
   true,
 );
+
+console.log("\nNoon is yellow to green, and orange waits for the afternoon");
+const hue = (h) => {
+  const [r, g, b] = [1, 3, 5].map((i) => parseInt(h.slice(i, i + 2), 16));
+  return { r, g, b };
+};
+const noon = skyAt(12 * 60);
+expect(
+  "noon's top is yellow",
+  hue(noon.top).r > 240 && hue(noon.top).g > 210 && hue(noon.top).b < 120,
+  true,
+);
+expect(
+  "noon's bottom is green",
+  hue(noon.bottom).g > hue(noon.bottom).r && hue(noon.bottom).g > hue(noon.bottom).b,
+  true,
+);
+const orange = (h) => hue(h).r > 230 && hue(h).g < 185 && hue(h).b < 120;
+expect(
+  "no orange top before 4pm",
+  Array.from({ length: 16 }, (_, h) => skyAt(h * 60).top).some(orange),
+  false,
+);
+expect("orange by 5pm", orange(skyAt(17 * 60).top), true);
