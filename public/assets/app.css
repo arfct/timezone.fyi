@@ -81,7 +81,6 @@ code {
   letter-spacing: 0.01em;
   height: 36px;
   padding: 0 16px;
-  border-radius: 18px;
   display: inline-block;
 }
 .btn:hover,
@@ -129,7 +128,6 @@ a:focus-visible {
   font: 500 14px / 30px var(--font);
   height: 32px;
   padding: 0 12px;
-  border-radius: 16px;
 }
 
 /* Event and live pages */
@@ -390,7 +388,6 @@ a:focus-visible {
   margin: auto;
   padding: 24px;
   border: 0;
-  border-radius: 16px;
   background: var(--surface);
   color: var(--text-high);
   box-shadow:
@@ -491,7 +488,6 @@ a:focus-visible {
   padding: 12px 16px;
   border-left: 4px solid var(--error);
   background: var(--field);
-  border-radius: 4px;
 }
 .home h2 {
   font-size: 22px;
@@ -553,7 +549,6 @@ a:focus-visible {
   padding: 0 12px;
   border: 0;
   border-bottom: 1px solid var(--text-medium);
-  border-radius: 4px 4px 0 0;
   background: var(--field);
   color: var(--text-high);
 }
@@ -568,7 +563,6 @@ a:focus-visible {
   gap: 10px;
   padding: 14px 16px;
   border: 1px solid var(--divider);
-  border-radius: 12px;
 }
 .result .link {
   flex: 1 1 260px;
@@ -956,7 +950,6 @@ html:not(.widget) .landing .lede {
 }
 html:not(.widget) .landing .guide {
   background: var(--background);
-  border-radius: 20px;
   padding: 8px 32px 28px;
   box-shadow: 0 12px 48px rgba(0, 0, 0, 0.28);
 }
@@ -980,6 +973,5 @@ html:not(.widget) .landing .home .foot {
   }
   html:not(.widget) .landing .guide {
     padding: 4px 20px 20px;
-    border-radius: 16px;
   }
 }
