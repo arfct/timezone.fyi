@@ -863,6 +863,9 @@ html.widget .hero,
 html.widget .strip {
   height: 100%;
 }
+html.widget .hero {
+  position: relative;
+}
 html.widget .strip {
   margin: 0;
   grid-template-rows: 100%;
@@ -905,4 +908,69 @@ html.w-accessoryRectangular .strip::after {
   padding: 0 10px;
   font-size: 13px;
   text-shadow: none;
+}
+
+/* The home page outside a widget: the 24 hours of sky fill the window behind
+   everything, from the top edge to the bottom, and stay put while the page
+   scrolls. The name and tagline sit on the sky; the link format is a card in
+   front of it; "Make a link" is white. Last in the file because the widget
+   rules above style the same elements, and only one set applies. */
+html:not(.widget) .landing .strip {
+  position: fixed;
+  inset: 0;
+  /* Under everything else in .home, which is its stacking context */
+  z-index: -1;
+  margin: 0;
+  grid-template-rows: 100%;
+}
+html:not(.widget) .landing .home {
+  position: relative;
+  z-index: 1;
+}
+/* Above .home, whose sky covers the whole window */
+html:not(.widget) .landing .home-top {
+  position: relative;
+  z-index: 2;
+}
+html:not(.widget) .landing .home-top .btn.primary {
+  background: #ffffff;
+  color: #111111;
+  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.18);
+}
+html:not(.widget) .landing .hero {
+  padding: clamp(24px, 8vh, 96px) 0 clamp(32px, 8vh, 80px);
+  text-align: center;
+}
+html:not(.widget) .landing .hero h1 {
+  position: static;
+  display: block;
+}
+html:not(.widget) .landing .lede {
+  margin: 12px auto 0;
+  color: #ffffff;
+  font-weight: 500;
+  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
+}
+html:not(.widget) .landing .guide {
+  background: var(--background);
+  border-radius: 20px;
+  padding: 8px 32px 28px;
+  box-shadow: 0 12px 48px rgba(0, 0, 0, 0.28);
+}
+html:not(.widget) .landing .guide .error {
+  margin-top: 24px;
+}
+html:not(.widget) .landing .home .foot {
+  padding: 20px 8px 0;
+  color: #ffffff;
+  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+}
+@media (max-width: 640px) {
+  html:not(.widget) .landing .home {
+    padding: 0 12px 20px;
+  }
+  html:not(.widget) .landing .guide {
+    padding: 4px 20px 20px;
+    border-radius: 16px;
+  }
 }

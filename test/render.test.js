@@ -198,6 +198,23 @@ expect(
   `timezone.fyi: ${TAGLINE}`,
 );
 expect("the tagline is under the name", home.includes(`<p class="lede">${TAGLINE}</p>`), true);
+expect(
+  "the name and tagline sit on the sky, outside the stripes",
+  /<div class="strip"[^>]*>(<i [^>]*><\/i>){24}<\/div>\s*<h1>timezone\.fyi<\/h1>\s*<p class="lede">/.test(
+    home,
+  ),
+  true,
+);
+{
+  const bad = homePage("https://timezone.fyi", "No such zone");
+  expect(
+    "an unreadable link's error is in the card with the link format",
+    /<section class="guide">\s*<p class="error" role="alert">No such zone<\/p>\s*<h2>Link format<\/h2>/.test(
+      bad,
+    ),
+    true,
+  );
+}
 expect("the home image carries the tagline", homeCard().includes(`>${TAGLINE}</text>`), true);
 expect(
   "the home description has an example link",

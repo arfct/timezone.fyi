@@ -209,7 +209,12 @@ expect("a repeat says so", data(page("/standup/weekly/2026-03-02/9:30am+15m,nyc"
 // only app.js sets, and only with the fragment (or hides .wcap, which only
 // app.js adds in a widget)
 const css = readFileSync(new URL("../public/assets/app.css", import.meta.url), "utf8");
-const widgetCss = css.slice(css.indexOf("/* Widgets."));
+// The widget section runs to the home page's rules outside a widget, which
+// follow it
+const widgetCss = css.slice(
+  css.indexOf("/* Widgets."),
+  css.indexOf("/* The home page outside a widget"),
+);
 const selectors = widgetCss
   .replace(/\/\*[\s\S]*?\*\//g, "")
   .match(/[^{}]+(?=\{)/g)

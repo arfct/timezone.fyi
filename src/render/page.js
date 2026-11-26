@@ -266,10 +266,10 @@ export function homePage(origin, error, where, now = Date.now()) {
 </header>
 <main class="home">
 <header class="hero">
-<div class="strip"${where ? ` data-lat="${where.lat}" data-lon="${where.lon}"` : ""}>${strip}<h1>${SITE}</h1></div>
+<div class="strip"${where ? ` data-lat="${where.lat}" data-lon="${where.lon}"` : ""}>${strip}</div>
+<h1>${SITE}</h1>
 <p class="lede">${TAGLINE}</p>
 </header>
-${error ? `<p class="error" role="alert">${e(error)}</p>` : ""}
 <div class="sheet builder" id="builder" popover data-host="${e(host)}">
 <h2>Make a link</h2>
 <div class="fields">
@@ -288,6 +288,7 @@ ${error ? `<p class="error" role="alert">${e(error)}</p>` : ""}
 <button class="btn" popovertarget="builder" popovertargetaction="hide">Close</button>
 </div>
 <section class="guide">
+${error ? `<p class="error" role="alert">${e(error)}</p>` : ""}
 <h2>Link format</h2>
 <ul class="examples">
 ${examples}
