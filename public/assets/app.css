@@ -912,7 +912,8 @@ html.w-accessoryRectangular .strip::after {
 
 /* The home page outside a widget: the 24 hours of sky fill the window behind
    everything, from the top edge to the bottom, and stay put while the page
-   scrolls. The name and tagline sit on the sky; the link format is a card in
+   scrolls. The name, tagline and footer are black on the sky, which is daylight
+   in the middle of the window where they sit; the link format is a card in
    front of it; "Make a link" is white. Last in the file because the widget
    rules above style the same elements, and only one set applies. */
 html:not(.widget) .landing .strip {
@@ -944,12 +945,14 @@ html:not(.widget) .landing .hero {
 html:not(.widget) .landing .hero h1 {
   position: static;
   display: block;
+  font-family: var(--font);
+  color: #000000;
+  text-shadow: none;
 }
 html:not(.widget) .landing .lede {
   margin: 12px auto 0;
-  color: #ffffff;
+  color: #000000;
   font-weight: 500;
-  text-shadow: 0 1px 12px rgba(0, 0, 0, 0.4);
 }
 html:not(.widget) .landing .guide {
   background: var(--background);
@@ -962,12 +965,18 @@ html:not(.widget) .landing .guide .error {
 }
 html:not(.widget) .landing .home .foot {
   padding: 20px 8px 0;
-  color: #ffffff;
-  text-shadow: 0 1px 8px rgba(0, 0, 0, 0.4);
+  justify-content: center;
+  gap: 4px 24px;
+  color: #000000;
 }
 @media (max-width: 640px) {
   html:not(.widget) .landing .home {
     padding: 0 12px 20px;
+  }
+  /* Two lines, so the tagline stays over the daylight hours */
+  html:not(.widget) .landing .lede {
+    max-width: 12em;
+    font-size: 17px;
   }
   html:not(.widget) .landing .guide {
     padding: 4px 20px 20px;
